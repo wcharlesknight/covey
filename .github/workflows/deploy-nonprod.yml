@@ -38,7 +38,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Build backend
-        run: cd backend && ./gradlew build -x test
+        run: cd backend && gradle build -x test
 
       - name: Create deployment package
         run: |
@@ -74,43 +74,6 @@ jobs:
             -Dapi.baseUrl=https://dev-api.covey.local
         continue-on-error: false
 
-      - name: Notify Slack on success
-        if: success()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "✅ Backend deployed to nonprod (covey-dev)",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "✅ *Backend deployed to nonprod*\nRepo: ${{ github.repository }}\nCommit: ${{ github.sha }}\nRef: ${{ github.ref }}"
-                  }
-                }
-              ]
-            }
-
-      - name: Notify Slack on failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "❌ Backend deployment to nonprod failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "❌ *Backend deployment to nonprod failed*\nRepo: ${{ github.repository }}\nCommit: ${{ github.sha }}\nRef: ${{ github.ref }}\nCheck: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                }
-              ]
-            }
 
   deploy-ios-testflight:
     runs-on: macos-latest
@@ -150,25 +113,6 @@ jobs:
           APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
           APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
           APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
-
-      - name: Notify Slack
-        if: success()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "✅ iOS build uploaded to TestFlight",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "✅ *iOS build uploaded to TestFlight*\nCommit: ${{ github.sha }}"
-                  }
-                }
-              ]
-            }
 
   update-planning-state:
     runs-on: ubuntu-latest
