@@ -25,12 +25,8 @@ jobs:
       - name: Run backend linting
         run: cd backend && gradle checkstyleMain
 
-      - name: Run backend unit tests
-        run: cd backend && gradle test
-
-      - name: Run backend integration tests
-        run: cd backend && gradle integrationTest
-        continue-on-error: true
+      - name: Run all backend tests (unit + integration)
+        run: cd backend && gradle allTests
 
   # ios-test:
   #   runs-on: macos-latest

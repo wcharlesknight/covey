@@ -57,6 +57,13 @@ task integrationTest(type: Test) {
     group = 'verification'
 }
 
+// Run both unit and integration tests
+task allTests {
+    dependsOn test, integrationTest
+    description = 'Run all unit and integration tests'
+    group = 'verification'
+}
+
 jacocoTestReport {
     dependsOn test
     afterEvaluate {
