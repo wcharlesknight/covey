@@ -47,7 +47,9 @@ test {
 
 task integrationTest(type: Test) {
     useJUnit()
-    testLogging.showStandardOutput = true
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
     description = 'Run integration tests'
     group = 'verification'
 }
