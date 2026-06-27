@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.google.gson.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +17,8 @@ public class WeeklySpotHandlerTest {
   public void setUp() {
     handler = new WeeklySpotHandler();
     context = mock(Context.class);
-    when(context.getLogger()).thenReturn(System.out::println);
+    LambdaLogger logger = mock(LambdaLogger.class);
+    when(context.getLogger()).thenReturn(logger);
   }
 
   @Test
