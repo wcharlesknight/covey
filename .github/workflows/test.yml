@@ -26,7 +26,7 @@ jobs:
         run: cd backend && gradle checkstyleMain
 
       - name: Run all backend tests (unit + integration)
-        run: cd backend && gradle allTests
+        run: cd backend && gradle allTests -Dnet.bytebuddy.experimental=true
 
   # ios-test:
   #   runs-on: macos-latest

@@ -11,8 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class WeeklyJobServiceTest {
-  private WeeklyJobService weeklyJobService;
   private GooglePlacesClient mockPlacesClient;
+  private WeeklyJobService weeklyJobService;
 
   @Before
   public void setUp() {

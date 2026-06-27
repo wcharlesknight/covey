@@ -1,6 +1,7 @@
 package com.covey.security;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import com.covey.middleware.AuthMiddleware;
 import com.google.firebase.auth.FirebaseAuth;
@@ -9,7 +10,6 @@ import com.google.firebase.auth.FirebaseToken;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 public class AuthSecurityTest {
   private FirebaseAuth firebaseAuth;
@@ -17,7 +17,7 @@ public class AuthSecurityTest {
 
   @Before
   public void setUp() {
-    firebaseAuth = Mockito.mock(FirebaseAuth.class);
+    firebaseAuth = mock(FirebaseAuth.class);
     authMiddleware = new AuthMiddleware(firebaseAuth);
   }
 
@@ -43,7 +43,7 @@ public class AuthSecurityTest {
   public void testAuthRejectsExpiredToken() throws FirebaseAuthException {
     String expiredToken = "Bearer expired.token.here";
 
-    Mockito.when(firebaseAuth.verifyIdToken(Mockito.anyString()))
+    when(firebaseAuth.verifyIdToken(anyString()))
         .thenThrow(new RuntimeException("Token expired"));
 
     Optional<String> result = authMiddleware.validateToken(expiredToken);
@@ -54,7 +54,7 @@ public class AuthSecurityTest {
   public void testAuthRejectsInvalidSignature() throws FirebaseAuthException {
     String invalidToken = "Bearer invalid.signature.here";
 
-    Mockito.when(firebaseAuth.verifyIdToken(Mockito.anyString()))
+    when(firebaseAuth.verifyIdToken(anyString()))
         .thenThrow(new RuntimeException("Invalid signature"));
 
     Optional<String> result = authMiddleware.validateToken(invalidToken);
@@ -66,9 +66,9 @@ public class AuthSecurityTest {
     String validToken = "Bearer valid.token.here";
     String expectedUid = "user-12345";
 
-    FirebaseToken mockToken = Mockito.mock(FirebaseToken.class);
-    Mockito.when(mockToken.getUid()).thenReturn(expectedUid);
-    Mockito.when(firebaseAuth.verifyIdToken(Mockito.anyString())).thenReturn(mockToken);
+    FirebaseToken mockToken = mock(FirebaseToken.class);
+    when(mockToken.getUid()).thenReturn(expectedUid);
+    when(firebaseAuth.verifyIdToken(anyString())).thenReturn(mockToken);
 
     Optional<String> result = authMiddleware.validateToken(validToken);
 
