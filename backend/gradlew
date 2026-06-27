@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Gradle startup script for Unix
+
+APP_NAME="Gradle"
+APP_HOME=$( cd "${0%/*}" && pwd -P )
+APP_PATH=$APP_HOME/gradle/wrapper
+
+if ! command -v gradle &> /dev/null; then
+    exec "$APP_PATH/gradle-wrapper.jar" "$@"
+fi
+
+gradle "$@"
