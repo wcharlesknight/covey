@@ -52,13 +52,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'ios/package-lock.json'
 
       - name: Install dependencies
         run: |
           cd ios
-          npm install
+          npm install --legacy-peer-deps
 
       - name: Run ESLint
         run: |
