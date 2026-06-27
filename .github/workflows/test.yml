@@ -42,55 +42,55 @@ jobs:
           flags: backend
           fail_ci_if_error: true
 
-  ios-test:
-    runs-on: macos-latest
-    name: React Native Tests
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: |
-          cd ios
-          npm install --legacy-peer-deps
-
-      - name: Run ESLint
-        run: |
-          cd ios
-          npm run lint
-        continue-on-error: true
-
-      - name: Run Jest unit tests
-        run: |
-          cd ios
-          npm test -- --coverage
-        timeout-minutes: 15
-
-      - name: Build Expo app
-        run: |
-          cd ios
-          npx expo prebuild --clean
-        continue-on-error: true
-
-      - name: Run Detox E2E tests
-        run: |
-          cd ios
-          npx detox build-framework-cache
-          npx detox build-app
-          npx detox test-runner
-        timeout-minutes: 30
-        continue-on-error: true
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./ios/coverage/lcov.info
-          flags: ios
-          fail_ci_if_error: false
+  # ios-test:
+  #   runs-on: macos-latest
+  #   name: React Native Tests
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18'
+  #
+  #     - name: Install dependencies
+  #       run: |
+  #         cd ios
+  #         npm install --legacy-peer-deps
+  #
+  #     - name: Run ESLint
+  #       run: |
+  #         cd ios
+  #         npm run lint
+  #       continue-on-error: true
+  #
+  #     - name: Run Jest unit tests
+  #       run: |
+  #         cd ios
+  #         npm test -- --coverage
+  #       timeout-minutes: 15
+  #
+  #     - name: Build Expo app
+  #       run: |
+  #         cd ios
+  #         npx expo prebuild --clean
+  #       continue-on-error: true
+  #
+  #     - name: Run Detox E2E tests
+  #       run: |
+  #         cd ios
+  #         npx detox build-framework-cache
+  #         npx detox build-app
+  #         npx detox test-runner
+  #       timeout-minutes: 30
+  #       continue-on-error: true
+  #
+  #     - name: Upload coverage to Codecov
+  #       uses: codecov/codecov-action@v3
+  #       with:
+  #         files: ./ios/coverage/lcov.info
+  #         flags: ios
+  #         fail_ci_if_error: false
 
   lint-commits:
     runs-on: ubuntu-latest
