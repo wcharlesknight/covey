@@ -55,6 +55,9 @@ task integrationTest(type: Test) {
     testLogging {
         events "passed", "skipped", "failed"
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    includes = ['com/covey/integration/*Test.class', '**/integration/**Test.class']
     description = 'Run integration tests'
     group = 'verification'
 }
