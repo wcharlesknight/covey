@@ -1,24 +1,22 @@
 package com.covey.handlers;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.gson.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 public class WeeklySpotHandlerTest {
   private WeeklySpotHandler handler;
-
-  @Mock
   private Context context;
 
   @Before
   public void setUp() {
-    MockitoAnnotations.openMocks(this);
     handler = new WeeklySpotHandler();
+    context = mock(Context.class);
+    when(context.getLogger()).thenReturn(System.out::println);
   }
 
   @Test
