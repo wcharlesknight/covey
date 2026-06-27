@@ -23,7 +23,7 @@ public class AuthMiddleware {
       FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
       String uid = decodedToken.getUid();
       return Optional.of(uid);
-    } catch (FirebaseAuthException e) {
+    } catch (Exception e) {
       return Optional.empty();
     }
   }

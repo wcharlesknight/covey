@@ -40,7 +40,7 @@ public class AuthMiddlewareTest {
     String invalidToken = "Bearer invalid.token.here";
 
     when(firebaseAuth.verifyIdToken(anyString()))
-        .thenThrow(new FirebaseAuthException("INVALID_ID_TOKEN", "Token is invalid"));
+        .thenThrow(new RuntimeException("Invalid token"));
 
     Optional<String> result = authMiddleware.validateToken(invalidToken);
 
