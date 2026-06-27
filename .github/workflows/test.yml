@@ -23,16 +23,16 @@ jobs:
           cache: gradle
 
       - name: Run backend linting
-        run: cd backend && ./gradlew checkstyleMain
+        run: cd backend && gradle checkstyleMain
 
       - name: Run backend unit tests
-        run: cd backend && ./gradlew test
+        run: cd backend && gradle test
 
       - name: Run backend integration tests
-        run: cd backend && ./gradlew integrationTest
+        run: cd backend && gradle integrationTest
 
       - name: Run OWASP Dependency Check
-        run: cd backend && ./gradlew dependencyCheckAnalyze
+        run: cd backend && gradle dependencyCheckAnalyze
         continue-on-error: true
 
       - name: Upload coverage reports
