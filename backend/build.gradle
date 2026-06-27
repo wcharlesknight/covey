@@ -28,6 +28,9 @@ dependencies {
     // JSON processing
     implementation 'com.google.code.gson:gson:2.10.1'
 
+    // Google Auth (for Firebase token verification)
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.11.0'
+
     // Testing
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.2.0'
