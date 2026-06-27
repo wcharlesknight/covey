@@ -33,7 +33,8 @@ dependencies {
 
     // Testing
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:5.2.0'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation 'net.bytebuddy:byte-buddy:1.15.10'
 }
 
 checkstyle {
@@ -46,6 +47,7 @@ test {
     jacoco {
         destinationFile = file("${buildDir}/jacoco/test.exec")
     }
+    jvmArgs = ['-Dnet.bytebuddy.experimental=true']
 }
 
 task integrationTest(type: Test) {
@@ -53,7 +55,17 @@ task integrationTest(type: Test) {
     testLogging {
         events "passed", "skipped", "failed"
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    includes = ['com/covey/integration/*Test.class', '**/integration/**Test.class']
     description = 'Run integration tests'
+    group = 'verification'
+}
+
+// Run both unit and integration tests
+task allTests {
+    dependsOn test, integrationTest
+    description = 'Run all unit and integration tests'
     group = 'verification'
 }
 
