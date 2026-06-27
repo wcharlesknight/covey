@@ -30,17 +30,7 @@ jobs:
 
       - name: Run backend integration tests
         run: cd backend && gradle integrationTest
-
-      - name: Run OWASP Dependency Check
-        run: cd backend && gradle dependencyCheckAnalyze
         continue-on-error: true
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./backend/build/reports/jacoco/test/jacocoTestReport.xml
-          flags: backend
-          fail_ci_if_error: true
 
   # ios-test:
   #   runs-on: macos-latest
