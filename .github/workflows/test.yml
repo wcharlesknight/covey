@@ -25,8 +25,18 @@ jobs:
       - name: Run backend linting
         run: cd backend && gradle checkstyleMain
 
-      - name: Run all backend tests (unit + integration)
-        run: cd backend && gradle allTests -Dnet.bytebuddy.experimental=true
+      - name: Run unit tests
+        run: cd backend && gradle test -Dnet.bytebuddy.experimental=true
+
+      - name: Run integration tests
+        run: cd backend && gradle integrationTest -Dnet.bytebuddy.experimental=true
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: 'backend/build/test-results/**/*.xml'
+          check_name: Backend Test Results
 
   # ios-test:
   #   runs-on: macos-latest
