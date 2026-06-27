@@ -1,0 +1,53 @@
+# Backend
+backend/target/
+backend/.gradle/
+backend/build/
+backend/.idea/
+backend/*.iml
+backend/.DS_Store
+backend/src/main/resources/application*.properties.local
+
+# iOS
+ios/Pods/
+ios/.xcworkspace/xcuserdata/
+ios/build/
+ios/.DS_Store
+ios/*.xcworkspace
+!ios/*.xcworkspace/contents.xcworkspacedata
+ios/DerivedData/
+ios/.swiftpm/
+ios/Package.resolved
+
+# Environment & Secrets (NEVER commit these)
+.env
+.env.local
+*.pem
+*.p8
+*.p12
+firebase-service-account.json
+google-places-api-key.json
+aws-credentials.json
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# CI/CD artifacts
+.coverage/
+coverage/
+
+# Node (if using any tooling)
+node_modules/
+.npmrc
+
+# Temp files
+tmp/
+temp/
+*.tmp

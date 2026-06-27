@@ -1,0 +1,184 @@
+name: Deploy to Nonprod
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - 'ios/**'
+      - 'infrastructure/**'
+      - '.github/workflows/deploy-nonprod.yml'
+
+env:
+  AWS_REGION: us-west-2
+  FIREBASE_PROJECT_ID: covey-dev
+
+jobs:
+  deploy-backend-nonprod:
+    runs-on: ubuntu-latest
+    name: Deploy Backend to Nonprod
+    environment: nonprod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build backend
+        run: cd backend && ./gradlew build -x test
+
+      - name: Create deployment package
+        run: |
+          cd backend/build/libs
+          ls -la
+          # Adjust based on your Lambda handler artifact name
+          echo "LAMBDA_ARTIFACT=$(ls covey-*.jar | head -1)" >> $GITHUB_ENV
+
+      - name: Deploy Lambda function
+        run: |
+          aws lambda update-function-code \
+            --function-name covey-weekly-spot-dev \
+            --zip-file fileb://backend/build/distributions/covey-lambda.zip \
+            --region ${{ env.AWS_REGION }}
+
+          # Wait for update to complete
+          aws lambda wait function-updated \
+            --function-name covey-weekly-spot-dev \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Verify Lambda deployment
+        run: |
+          aws lambda get-function \
+            --function-name covey-weekly-spot-dev \
+            --region ${{ env.AWS_REGION }} \
+            | jq '.Configuration | {FunctionName, Runtime, CodeSha256, LastModified}'
+
+      - name: Run smoke tests against nonprod
+        run: |
+          cd backend
+          ./gradlew smokeTest \
+            -Denv=dev \
+            -Dapi.baseUrl=https://dev-api.covey.local
+        continue-on-error: false
+
+      - name: Notify Slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "✅ Backend deployed to nonprod (covey-dev)",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Backend deployed to nonprod*\nRepo: ${{ github.repository }}\nCommit: ${{ github.sha }}\nRef: ${{ github.ref }}"
+                  }
+                }
+              ]
+            }
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "❌ Backend deployment to nonprod failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ *Backend deployment to nonprod failed*\nRepo: ${{ github.repository }}\nCommit: ${{ github.sha }}\nRef: ${{ github.ref }}\nCheck: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+
+  deploy-ios-testflight:
+    runs-on: macos-latest
+    name: Deploy iOS to TestFlight (EAS)
+    environment: nonprod
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'ios/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd ios
+          npm install
+
+      - name: Set up EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Build for TestFlight with EAS
+        run: |
+          cd ios
+          eas build --platform ios --profile preview
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to TestFlight
+        run: |
+          cd ios
+          eas submit --platform ios --latest
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+
+      - name: Notify Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "✅ iOS build uploaded to TestFlight",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *iOS build uploaded to TestFlight*\nCommit: ${{ github.sha }}"
+                  }
+                }
+              ]
+            }
+
+  update-planning-state:
+    runs-on: ubuntu-latest
+    name: Update Planning State
+    needs: [ deploy-backend-nonprod, deploy-ios-testflight ]
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update deployment timestamp
+        run: |
+          TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "Last nonprod deployment: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY

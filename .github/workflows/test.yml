@@ -1,0 +1,122 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - 'ios/**'
+      - '.github/workflows/test.yml'
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    name: Backend Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Run backend linting
+        run: cd backend && ./gradlew checkstyleMain
+
+      - name: Run backend unit tests
+        run: cd backend && ./gradlew test
+
+      - name: Run backend integration tests
+        run: cd backend && ./gradlew integrationTest
+
+      - name: Run OWASP Dependency Check
+        run: cd backend && ./gradlew dependencyCheckAnalyze
+        continue-on-error: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: backend
+          fail_ci_if_error: true
+
+  ios-test:
+    runs-on: macos-latest
+    name: React Native Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'ios/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd ios
+          npm install
+
+      - name: Run ESLint
+        run: |
+          cd ios
+          npm run lint
+        continue-on-error: true
+
+      - name: Run Jest unit tests
+        run: |
+          cd ios
+          npm test -- --coverage
+        timeout-minutes: 15
+
+      - name: Build Expo app
+        run: |
+          cd ios
+          npx expo prebuild --clean
+        continue-on-error: true
+
+      - name: Run Detox E2E tests
+        run: |
+          cd ios
+          npx detox build-framework-cache
+          npx detox build-app
+          npx detox test-runner
+        timeout-minutes: 30
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./ios/coverage/lcov.info
+          flags: ios
+          fail_ci_if_error: false
+
+  lint-commits:
+    runs-on: ubuntu-latest
+    name: Lint Commits
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: .commitlintrc.json
+        continue-on-error: true
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    name: Scan for Secrets
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: TruffleHog Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+        continue-on-error: true
