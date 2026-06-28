@@ -53,6 +53,11 @@ sourceSets {
     }
 }
 
+configurations {
+    smokeTestImplementation.extendsFrom testImplementation
+    smokeTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 test {
     useJUnit()
     jacoco {
