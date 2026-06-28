@@ -79,6 +79,18 @@ jacocoTestReport {
     }
 }
 
+task createLambdaZip(type: Zip) {
+    from 'build/libs'
+    include '*.jar'
+    archiveFileName = 'covey-lambda.zip'
+    destinationDirectory = file('build/distributions')
+    doFirst {
+        file('build/distributions').mkdirs()
+    }
+}
+
+createLambdaZip.dependsOn build
+
 task smokeTest {
     description = 'Run smoke tests against deployed Lambda'
     doLast {
