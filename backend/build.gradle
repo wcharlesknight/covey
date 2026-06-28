@@ -31,6 +31,9 @@ dependencies {
     // Google Auth (for Firebase token verification)
     implementation 'com.google.auth:google-auth-library-oauth2-http:1.11.0'
 
+    // AWS Secrets Manager (for loading Firebase credentials)
+    implementation 'software.amazon.awssdk:secretsmanager:2.24.0'
+
     // Testing
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.11.0'
