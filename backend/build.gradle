@@ -108,9 +108,18 @@ task fatJar(type: Jar) {
 }
 
 task createLambdaZip(type: Zip) {
-    from fatJar.outputs
+    duplicatesStrategy = 'exclude'
     archiveFileName = 'covey-lambda.zip'
     destinationDirectory = file('build/distributions')
+
+    // Add the fat JAR as the main classpath
+    from fatJar.outputs
+
+    // Include bootstrap script for Lambda custom runtime configuration
+    from(file('bootstrap')) {
+        into '/'
+    }
+
     doFirst {
         file('build/distributions').mkdirs()
     }
