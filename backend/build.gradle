@@ -97,6 +97,7 @@ jacocoTestReport {
 
 task fatJar(type: Jar) {
     archiveFileName = 'covey-all.jar'
+    duplicatesStrategy = 'exclude'
     from sourceSets.main.output
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
