@@ -57,12 +57,13 @@ jobs:
           aws lambda get-function \
             --function-name covey-weekly-spot-dev \
             --region ${{ env.AWS_REGION }} \
-            | jq '.Configuration | {FunctionName, Runtime, CodeSha256, LastModified}'
+            --query 'Configuration.[FunctionName,Runtime,CodeSha256,LastModified]' \
+            --output text
 
       - name: Run smoke tests against nonprod
         run: |
           cd backend
-          ./gradlew smokeTest \
+          gradle smokeTest \
             -Denv=dev \
             -Dapi.baseUrl=https://dev-api.covey.local
         continue-on-error: false
