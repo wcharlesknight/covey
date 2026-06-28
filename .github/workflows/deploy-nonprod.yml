@@ -68,15 +68,12 @@ jobs:
             --query 'Configuration.[FunctionName,Runtime,CodeSha256,LastModified]' \
             --output text
 
-      - name: Get Lambda Function URL
-        id: lambda_url
+      - name: Get API Gateway endpoint
+        id: api_gateway
         run: |
-          URL=$(aws lambda get-function-url-config \
-            --function-name covey-weekly-spot-dev \
-            --region ${{ env.AWS_REGION }} \
-            --query 'FunctionUrl' \
-            --output text)
-          echo "LAMBDA_URL=$URL" >> $GITHUB_OUTPUT
+          # API Gateway endpoint for dev stage
+          # This routes requests to the Lambda function via API Gateway
+          echo "LAMBDA_ENDPOINT=https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev" >> $GITHUB_OUTPUT
 
       - name: Generate Firebase test token
         id: firebase_token
@@ -95,13 +92,13 @@ jobs:
         env:
           FIREBASE_CREDENTIALS_SECRET: covey/firebase-admin-dev
 
-      - name: Run smoke tests against nonprod Lambda
+      - name: Run smoke tests against nonprod API Gateway
         run: |
           cd backend
           gradle smokeTest \
             -Denv=dev
         env:
-          LAMBDA_ENDPOINT: ${{ steps.lambda_url.outputs.LAMBDA_URL }}
+          LAMBDA_ENDPOINT: ${{ steps.api_gateway.outputs.LAMBDA_ENDPOINT }}
           FIREBASE_TEST_TOKEN: ${{ steps.firebase_token.outputs.FIREBASE_TOKEN }}
         continue-on-error: false
 
