@@ -90,9 +90,19 @@ jacocoTestReport {
     }
 }
 
+task fatJar(type: Jar) {
+    archiveFileName = 'covey-all.jar'
+    from sourceSets.main.output
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    manifest {
+        attributes 'Main-Class': 'com.covey.App'
+    }
+}
+
 task createLambdaZip(type: Zip) {
-    from 'build/libs'
-    include '*.jar'
+    from fatJar.outputs
     archiveFileName = 'covey-lambda.zip'
     destinationDirectory = file('build/distributions')
     doFirst {
@@ -100,7 +110,7 @@ task createLambdaZip(type: Zip) {
     }
 }
 
-createLambdaZip.dependsOn build
+createLambdaZip.dependsOn fatJar
 
 task smokeTest(type: Test) {
     useJUnit()
