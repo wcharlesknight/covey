@@ -35,6 +35,9 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.11.0'
     testImplementation 'net.bytebuddy:byte-buddy:1.15.10'
+
+    // HTTP client for integration tests
+    testImplementation 'com.squareup.okhttp3:okhttp:4.11.0'
 }
 
 checkstyle {
