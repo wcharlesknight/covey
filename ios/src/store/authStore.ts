@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await initializeApiClient();
 
       // Set up auth state listener
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
           set({
             user: {
@@ -64,8 +64,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           });
         }
       });
-
-      return unsubscribe;
     } catch (error: any) {
       set({
         error: error.message,
@@ -88,7 +86,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const provider = new OAuthProvider('apple.com');
       const authCredential = provider.credential({
         idToken: credential.identityToken as string,
-        rawNonce: credential.nonce,
+        rawNonce: (credential as any).nonce,
       });
 
       const userCredential = await signInWithCredential(auth, authCredential);

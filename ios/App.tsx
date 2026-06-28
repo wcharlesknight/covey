@@ -80,7 +80,7 @@ export default function App() {
       <NavigationContainer>
         {user ? <AppStack /> : <AuthStack />}
       </NavigationContainer>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar />
     </SafeAreaProvider>
   );
 }
