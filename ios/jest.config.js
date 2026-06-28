@@ -14,7 +14,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(expo|expo-modules-autolinking|react-native|@react-native|@react-navigation|@react-native-firebase)/)',
+    'node_modules/(?!(expo|expo-modules-autolinking|react-native|@react-navigation)/)',
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
