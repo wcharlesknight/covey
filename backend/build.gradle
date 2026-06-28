@@ -45,13 +45,21 @@ checkstyle {
     configFile = file("${rootDir}/checkstyle.xml")
 }
 
+sourceSets {
+    smokeTest {
+        java.srcDir 'src/smokeTest/java'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
 test {
     useJUnit()
     jacoco {
         destinationFile = file("${buildDir}/jacoco/test.exec")
     }
     jvmArgs = ['-Dnet.bytebuddy.experimental=true']
-    excludes = ['com/covey/integration/**Test.class', '**/integration/**Test.class']
+    excludes = ['com/covey/integration/**Test.class', '**/integration/**Test.class', 'com/covey/smoke/**Test.class']
 }
 
 task integrationTest(type: Test) {
@@ -94,9 +102,11 @@ task createLambdaZip(type: Zip) {
 
 createLambdaZip.dependsOn build
 
-task smokeTest {
+task smokeTest(type: Test) {
+    useJUnit()
+    testClassesDirs = sourceSets.smokeTest.output.classesDirs
+    classpath = sourceSets.smokeTest.runtimeClasspath
+    jvmArgs = ['-Dnet.bytebuddy.experimental=true']
     description = 'Run smoke tests against deployed Lambda'
-    doLast {
-        println "Smoke tests would run here"
-    }
+    group = 'verification'
 }
