@@ -134,3 +134,9 @@ task smokeTest(type: Test) {
     description = 'Run smoke tests against deployed Lambda'
     group = 'verification'
 }
+
+task printClasspath {
+    doLast {
+        println sourceSets.smokeTest.runtimeClasspath.asPath
+    }
+}
