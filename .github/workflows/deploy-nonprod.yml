@@ -68,12 +68,38 @@ jobs:
             --query 'Configuration.[FunctionName,Runtime,CodeSha256,LastModified]' \
             --output text
 
-      - name: Run smoke tests against nonprod
+      - name: Get API Gateway endpoint
+        id: api_gateway
+        run: |
+          # API Gateway endpoint for dev stage
+          # This routes requests to the Lambda function via API Gateway
+          echo "LAMBDA_ENDPOINT=https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev" >> $GITHUB_OUTPUT
+
+      - name: Generate Firebase test token
+        id: firebase_token
+        run: |
+          cd backend
+          # Build the smoke test classes and get classpath
+          gradle compileSmokeTestJava -x test
+
+          # Get classpath for running the token generator
+          CLASSPATH=$(gradle -q printClasspath)
+
+          # Generate test token using the utility
+          TOKEN=$(java -cp "$CLASSPATH:build/classes/java/smokeTest:build/classes/java/main" \
+            com.covey.smoke.FirebaseTestTokenGenerator smoke-test-user)
+          echo "FIREBASE_TOKEN=$TOKEN" >> $GITHUB_OUTPUT
+        env:
+          FIREBASE_CREDENTIALS_SECRET: covey/firebase-admin-dev
+
+      - name: Run smoke tests against nonprod API Gateway
         run: |
           cd backend
           gradle smokeTest \
-            -Denv=dev \
-            -Dapi.baseUrl=https://dev-api.covey.local
+            -Denv=dev
+        env:
+          LAMBDA_ENDPOINT: ${{ steps.api_gateway.outputs.LAMBDA_ENDPOINT }}
+          FIREBASE_TEST_TOKEN: ${{ steps.firebase_token.outputs.FIREBASE_TOKEN }}
         continue-on-error: false
 
 
