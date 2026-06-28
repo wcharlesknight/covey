@@ -1,0 +1,35 @@
+flowchart TD
+    A([EventBridge cron fires\nThursday 08:00]) --> B[Read active cities from Firebase\nusers with location update in last 14 days]
+    B --> C{At least one\nactive city?}
+    C -->|No| Z1([Log: no active cities — job ends])
+    C -->|Yes| D[For each city: read\n4-week venue exclusion list from Firebase]
+    D --> E[Call Google Places API\nnearbySearch by city centre coordinates]
+    E --> F{Google Places\nAPI success?}
+    F -->|No — quota or timeout| G[Log error for this city\nSend admin alert email]
+    G --> H{More cities\nto process?}
+    F -->|Yes| I[Filter candidates:\nremove venues in exclusion list]
+    I --> J[Apply curation rules:\nrating ≥ 4.0, reviews ≥ 50, open weekdays]
+    J --> K{Candidates\nremaining?}
+    K -->|No candidates| L[Expand search radius 50%\nretry Google Places call]
+    L --> M{Candidates after\nretry?}
+    M -->|Still none| N[Select least-recently-used\nvenue from exclusion list\nlabel as Returning Favourite]
+    M -->|Yes| O[Select top-ranked candidate]
+    N --> O
+    K -->|Yes| P{Admin override\nset for this city?}
+    P -->|Yes| Q[Use admin-specified\nvenue instead]
+    P -->|No| O
+    Q --> R[Write weekly spot to Firebase\ncity · weekId · venue details · photo URL]
+    O --> R
+    R --> S[Fetch eligible users for city\nauthenticated · push token present]
+    S --> T[Send APNs push notification\nto each eligible device token]
+    T --> U{APNs token\nvalid?}
+    U -->|Invalid token| V[Remove stale token from Firebase\nskip this user]
+    V --> W{More users\nfor push?}
+    U -->|Valid| X[Push delivered to device]
+    X --> W
+    W -->|Yes| T
+    W -->|No| AA[Send email digest\nto users with email address on file]
+    AA --> AB[Write job completion log to Firebase\ntimestamp · venue · push count · email count · errors]
+    AB --> H
+    H -->|Yes| D
+    H -->|No| AC([Weekly job complete])

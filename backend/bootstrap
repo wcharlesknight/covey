@@ -1,26 +1,11 @@
 #!/bin/sh
 
-# Lambda Bootstrap Script for Java Runtime
-# This script configures the Java environment and classpath for Lambda execution
+# Lambda Bootstrap for Java 17
+# The fat JAR has been extracted, so all classes are available at the root.
+# Delegate to Lambda's standard Java 17 runtime bootstrap to find and load the handler.
 
 set -euo pipefail
 
-# Set JAVA_HOME if not already set
-if [ -z "${JAVA_HOME:-}" ]; then
-    JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
-    export JAVA_HOME
-fi
-
-# Add JAR files to classpath
-LAMBDA_TASK_ROOT="${LAMBDA_TASK_ROOT:-.}"
-JAR_PATH="${LAMBDA_TASK_ROOT}/covey-all.jar"
-
-# Export classpath
-export CLASSPATH="${JAR_PATH}"
-
-# Start the Lambda runtime
-exec /var/lang/bin/java \
-    -cp "${CLASSPATH}" \
-    -Dcom.amazonaws.lambda.java.Handlers \
-    "${_HANDLER}" \
-    "$@"
+# Lambda's java17 runtime will automatically add the task root directory to classpath
+# No explicit classpath configuration needed
+exec /var/runtime/bootstrap

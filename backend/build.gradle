@@ -96,8 +96,7 @@ jacocoTestReport {
 }
 
 task fatJar(type: Jar) {
-    archiveFileName = 'covey-all.jar'
-    duplicatesStrategy = 'exclude'
+    archiveFileName = 'covey-lambda.jar'
     from sourceSets.main.output
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
@@ -105,17 +104,14 @@ task fatJar(type: Jar) {
     manifest {
         attributes 'Main-Class': 'com.covey.App'
     }
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
 task createLambdaZip(type: Zip) {
-    duplicatesStrategy = 'exclude'
     archiveFileName = 'covey-lambda.zip'
     destinationDirectory = file('build/distributions')
 
-    // Add the fat JAR as the main classpath
-    from fatJar.outputs
-
-    // Include bootstrap script for Lambda custom runtime configuration
+    from zipTree(file('build/libs/covey-lambda.jar'))
     from(file('bootstrap')) {
         into '/'
     }

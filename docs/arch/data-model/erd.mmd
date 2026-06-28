@@ -1,0 +1,79 @@
+erDiagram
+    USER ||--o{ INVITE : "receives"
+    USER ||--o{ PUSH_TOKEN : "registers"
+    USER ||--o{ EMAIL_ADDRESS : "owns"
+    USER ||--o{ USER_FRIEND : "has (as user)"
+    USER ||--o{ USER_FRIEND : "is friend of"
+    USER }o--|| CITY : "selects"
+
+    CITY ||--o{ WEEKLY_SPOT : "features"
+    CITY ||--o{ VENUE_EXCLUSION_LIST : "excludes venues in"
+
+    WEEKLY_SPOT ||--o{ INVITE : "generates"
+
+    USER {
+        string id PK "Firebase Auth UID"
+        string email UK "lowercased"
+        string name
+        string selectedCity FK "City.id"
+        timestamp createdAt
+    }
+
+    CITY {
+        string id PK "slug e.g. london"
+        string name
+        boolean isActive
+        string timezone "IANA tz e.g. Europe/London"
+    }
+
+    WEEKLY_SPOT {
+        string id PK "{cityId}_{weekId}"
+        string city FK "City.id"
+        string weekId "ISO week e.g. 2026-W26"
+        string venueId "Google Places ID"
+        string venueName
+        string address
+        string photoUrl
+        number rating
+        number reviewCount
+        map hours "day to open/close"
+    }
+
+    INVITE {
+        string id PK "{userId}_{weekId}"
+        string userId FK "User.id"
+        string weekId
+        string venueId
+        string city FK "City.id"
+        string status "INVITED|YES|NO|INTERESTED"
+        timestamp timestamp
+    }
+
+    PUSH_TOKEN {
+        string id PK "deviceToken hash"
+        string userId FK "User.id"
+        string deviceToken
+        string platform "ios|android"
+        timestamp createdAt
+        timestamp lastUsedAt
+        boolean isValid
+    }
+
+    EMAIL_ADDRESS {
+        string id PK
+        string userId FK "User.id"
+        string email
+        boolean isVerified
+    }
+
+    VENUE_EXCLUSION_LIST {
+        string id PK "{cityId}_{weekId}"
+        string city FK "City.id"
+        string weekId
+        array venueIds "Google Places IDs"
+    }
+
+    USER_FRIEND {
+        string userId FK "User.id"
+        string friendId FK "User.id"
+    }

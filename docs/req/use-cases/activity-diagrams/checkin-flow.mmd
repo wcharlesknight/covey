@@ -1,0 +1,28 @@
+flowchart TD
+    A([User taps I'm Here\non spot detail screen]) --> B[App reads current\nGPS location via CoreLocation]
+    B --> C{Location\navailable?}
+    C -->|No| D[Display error:\nLocation unavailable\nEnable location services to check in]
+    D --> E[Show link to iOS Settings]
+    E --> Z1([Checkin cancelled])
+    C -->|Yes| F[App sends checkin request to\nBackend Service\nuser ID · venue ID · current coordinates]
+    F --> G[Backend validates\nsession token]
+    G --> H{Token\nvalid?}
+    H -->|No| I[Return 401\nApp prompts re-authentication UC-001]
+    I --> Z2([Checkin cancelled — re-auth required])
+    H -->|Yes| J[Backend calculates distance\nbetween user coordinates\nand venue coordinates]
+    J --> K{Distance\n≤ 500m?}
+    K -->|No — too far| L[Return too-far error\nApp displays:\nGet closer to the venue\nand try again]
+    L --> Z3([Checkin cancelled — out of range])
+    K -->|Yes| M[Backend checks for\nexisting checkin today\nfor this user + venue]
+    M --> N{Already\nchecked in today?}
+    N -->|Yes| O[Return duplicate error\nApp displays:\nYou're already checked in here today\nwith original checkin time]
+    O --> Z4([Checkin cancelled — duplicate])
+    N -->|No| P[Backend writes checkin record\nto Firebase:\nuser ID · venue ID · week ID · city · timestamp]
+    P --> Q[Backend queries Firebase:\nactive checkins at this venue\nin last 2 hours]
+    Q --> R{Firebase\nwrite + read\nsuccess?}
+    R -->|Error| S[Return 503\nApp displays:\nCould not record checkin\nPlease try again]
+    S --> Z5([Checkin failed — server error])
+    R -->|Success| T[Backend returns\nlive attendee count to app]
+    T --> U[App updates spot detail screen:\nX people are here now]
+    U --> V[App marks I'm Here button\nas checked in — confirmed]
+    V --> W([Checkin complete\nSocial signals updated])
