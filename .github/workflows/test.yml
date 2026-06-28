@@ -36,55 +36,50 @@ jobs:
           path: backend/build/reports/tests/
           retention-days: 30
 
-  # ios-test:
-  #   runs-on: macos-latest
-  #   name: React Native Tests
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: '18'
-  #
-  #     - name: Install dependencies
-  #       run: |
-  #         cd ios
-  #         npm install --legacy-peer-deps
-  #
-  #     - name: Run ESLint
-  #       run: |
-  #         cd ios
-  #         npm run lint
-  #       continue-on-error: true
-  #
-  #     - name: Run Jest unit tests
-  #       run: |
-  #         cd ios
-  #         npm test -- --coverage
-  #       timeout-minutes: 15
-  #
-  #     - name: Build Expo app
-  #       run: |
-  #         cd ios
-  #         npx expo prebuild --clean
-  #       continue-on-error: true
-  #
-  #     - name: Run Detox E2E tests
-  #       run: |
-  #         cd ios
-  #         npx detox build-framework-cache
-  #         npx detox build-app
-  #         npx detox test-runner
-  #       timeout-minutes: 30
-  #       continue-on-error: true
-  #
-  #     - name: Upload coverage to Codecov
-  #       uses: codecov/codecov-action@v3
-  #       with:
-  #         files: ./ios/coverage/lcov.info
-  #         flags: ios
-  #         fail_ci_if_error: false
+  ios-test:
+    runs-on: ubuntu-latest
+    name: React Native Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'ios/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd ios
+          npm install
+
+      - name: Run TypeScript type checking
+        run: |
+          cd ios
+          npm run type-check
+        continue-on-error: false
+
+      - name: Run ESLint
+        run: |
+          cd ios
+          npm run lint
+        continue-on-error: true
+
+      - name: Run Jest unit tests
+        run: |
+          cd ios
+          npm test -- --coverage --passWithNoTests
+        timeout-minutes: 15
+        continue-on-error: false
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./ios/coverage/lcov.info
+          flags: ios
+          fail_ci_if_error: false
 
   lint-commits:
     runs-on: ubuntu-latest
