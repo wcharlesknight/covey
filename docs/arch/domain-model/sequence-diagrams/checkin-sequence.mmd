@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    actor User as User (iOS)
+    participant App as iOS App
+    participant Backend as Backend (Lambda API)
+    participant DB as Firebase (Firestore)
+
+    Note over User,DB: UC-007 RSVP to Weekly Invite (yes/no/interested)
+
+    User->>App: tap RSVP button (yes / no / interested)
+    activate App
+    App->>Backend: POST /invites/{inviteId}/rsvp { response: yes|no|interested } (session token)
+    activate Backend
+
+    Backend->>Backend: validate session token
+    alt session invalid
+        Backend-->>App: 401 Unauthorized
+        App-->>User: prompt re-authentication
+    else session valid
+        Backend->>DB: read Invite(inviteId, userId)
+        DB-->>Backend: Invite
+
+        alt invite exists and belongs to user
+            Backend->>DB: update Invite.status = response (YES / NO / INTERESTED)
+
+            Note over Backend: Fetch updated counts for display
+
+            Backend->>DB: count Invite(venueId, weekId, status=INVITED)
+            DB-->>Backend: inviteCount
+            Backend->>DB: count Invite(venueId, weekId, status=YES)
+            DB-->>Backend: yesCount
+            Backend->>DB: count Invite(venueId, weekId, status=INTERESTED)
+            DB-->>Backend: interestedCount
+
+            Backend-->>App: 200 { status: updated, spot, inviteCounts }
+            App-->>User: show "Your RSVP: [response]" + updated counts "X invited · Y confirmed"
+
+        else invite not found or wrong user
+            Backend-->>App: 404 / 403 Forbidden
+            App-->>User: show error "Invite not found"
+        end
+    end
+    deactivate Backend
+    deactivate App

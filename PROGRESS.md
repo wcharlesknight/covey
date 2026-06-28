@@ -66,13 +66,40 @@ aws lambda invoke --function-name covey-weekly-spot-dev --region us-west-2 \
 - **Auto-loaded:** Claude Code reads this at session start
 - **Contains:** Full WBS status, branches, files, infrastructure details
 
-**Project Planning Docs** (in covey repo):
-- `covey/docs/pm/wbs.md` - Work Breakdown Structure
-- `covey/docs/pm/charter.md` - Project Charter
-- `covey/docs/pm/schedule.md` - Timeline and Milestones
-- `covey/docs/pm/risk-register.csv` - Risk Register
+**Complete Documentation** (all in covey repo - `/covey/docs/`):
 
-All docs are now in the covey project for easy access!
+**Project Management:**
+- `docs/pm/wbs.md` - Work Breakdown Structure
+- `docs/pm/charter.md` - Project Charter
+- `docs/pm/schedule.md` - Timeline and Milestones
+- `docs/pm/risk-register.csv` - Risk Register
+
+**Architecture & Design:**
+- `docs/arch/` - System architecture, API specs, data models, ADRs
+- `docs/arch/api/openapi.yaml` - API specification
+- `docs/arch/data-model/` - ERD and Firebase schema
+
+**Requirements:**
+- `docs/req/` - Use cases, scenarios, activity diagrams
+
+**Security:**
+- `docs/security/` - Threat model, auth design, security checklist
+
+**Testing & Quality:**
+- `docs/test/` - Test strategy
+- `docs/quality/` - Quality model and gates
+
+**UX & Design:**
+- `docs/ux/` - Personas, journeys, prototypes, design tokens
+
+**DevOps & Business Analysis:**
+- `docs/devops/` - Deployment and infrastructure docs
+- `docs/ba/` - Business analysis docs
+
+**SDLC State:**
+- `docs/sdlc.state.json` - Planning state tracking
+
+All 39 docs files now in covey project for easy access!
 
 ---
 

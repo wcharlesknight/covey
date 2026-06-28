@@ -1,0 +1,56 @@
+graph LR
+
+  subgraph CLIENT_ACTORS["Client Actors"]
+    User(["User (iOS App)"])
+  end
+
+  subgraph BACKEND_ACTORS["Backend + External Actors"]
+    Backend(["Backend Service\nJava Lambda"])
+    GooglePlaces(["Google Places API"])
+    Firebase(["Firebase DB"])
+    Admin(["Admin / Curation"])
+  end
+
+  subgraph CLIENT_UCS["Client Use Cases"]
+    UC001(["UC-001\nRegister / Sign In\nApple or Google"])
+    UC002(["UC-002\nGrant Location Permission"])
+    UC003(["UC-003\nReceive Weekly Push Notification"])
+    UC004(["UC-004\nView This Week's Spot Details"])
+    UC005(["UC-005\nView 4-Week History"])
+    UC006(["UC-006\nSee Social Signals"])
+    UC007(["UC-007\nCheckin to Current Spot"])
+  end
+
+  subgraph BACKEND_UCS["Backend Use Cases"]
+    UC008(["UC-008\nRun Weekly Scheduled Job\nselect spot · send push + email"])
+    UC009(["UC-009\nReceive Location Updates\nfrom Clients"])
+    UC010(["UC-010\nFetch User 4-Week History"])
+  end
+
+  %% User initiates client use cases
+  User --> UC001
+  User --> UC002
+  User --> UC003
+  User --> UC004
+  User --> UC005
+  User --> UC006
+  User --> UC007
+
+  %% Backend actors initiate backend use cases
+  Backend --> UC008
+  Backend --> UC009
+  Backend --> UC010
+  Admin -.->|curates / overrides| UC008
+
+  %% Backend use cases touch external systems
+  UC008 -->|queries venues| GooglePlaces
+  UC008 -->|writes selected spot| Firebase
+  UC008 -->|reads last known location| Firebase
+  UC009 -->|writes location update| Firebase
+  UC010 -->|reads venue history| Firebase
+
+  %% Client use cases read from Firebase via backend
+  UC004 -.->|triggers| UC010
+  UC005 -.->|includes| UC010
+  UC007 -->|writes checkin| Firebase
+  UC006 -.->|reads checkin counts| Firebase

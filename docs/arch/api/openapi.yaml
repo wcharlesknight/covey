@@ -1,0 +1,745 @@
+openapi: 3.1.0
+info:
+  title: Location-Notifier Social Gathering API
+  version: 1.0.0
+  description: |
+    REST API exposed by the Java Lambda backend for the location-notifier social
+    gathering iOS app (React Native). The app shows each user a single "weekly spot"
+    for their selected city, lets them RSVP, and surfaces aggregate RSVP counts.
+
+    ## Authentication
+    Clients authenticate with Apple or Google Sign In. The native identity token is
+    POSTed to `/auth/apple-signin` or `/auth/google-signin`, which the backend
+    verifies and exchanges for a Firebase session token. All other endpoints require
+    a Bearer token (the Firebase ID token) in the `Authorization` header.
+
+    ## Sessions
+    ID tokens expire after 1 hour. Use `/auth/refresh` with the refresh token to
+    obtain a new ID token without re-prompting the user for sign in.
+
+    ## Versioning
+    The API is versioned via the base path (`/v1`). Breaking changes increment the
+    path version.
+
+    ## Error Model
+    All errors return the `Error` schema with a machine-readable `code` and a
+    human-readable `message`.
+  contact:
+    name: Backend Team
+    email: williamchknight@gmail.com
+  license:
+    name: Proprietary
+    url: https://example.com/license
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+  - url: https://staging-api.example.com/v1
+    description: Staging
+  - url: http://localhost:3000/v1
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Sign in and session management
+  - name: User
+    description: Current user profile
+  - name: Feed
+    description: Weekly spot feed
+  - name: Invites
+    description: RSVP to invites
+  - name: PushTokens
+    description: Device push token registration
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/apple-signin:
+    post:
+      tags: [Auth]
+      summary: Sign in with Apple
+      description: |
+        Exchange an Apple identity token for a Firebase session. Creates the user
+        record on first sign in.
+      operationId: appleSignIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppleSignInRequest'
+            examples:
+              default:
+                value:
+                  identityToken: "eyJraWQiOiJ...apple-jwt"
+                  authorizationCode: "c1a2b3..."
+                  fullName: "Alex Doe"
+      responses:
+        '200':
+          description: Sign in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/google-signin:
+    post:
+      tags: [Auth]
+      summary: Sign in with Google
+      description: |
+        Exchange a Google ID token for a Firebase session. Creates the user record
+        on first sign in.
+      operationId: googleSignIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleSignInRequest'
+            examples:
+              default:
+                value:
+                  idToken: "eyJhbGciOi...google-jwt"
+      responses:
+        '200':
+          description: Sign in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh session token
+      description: Exchange a refresh token for a new ID token.
+      operationId: refreshSession
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            examples:
+              default:
+                value:
+                  refreshToken: "AEu4IL3..."
+      responses:
+        '200':
+          description: New session issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /me:
+    get:
+      tags: [User]
+      summary: Get current user profile
+      operationId: getMe
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                default:
+                  value:
+                    id: "uid_abc123"
+                    email: "alex@example.com"
+                    name: "Alex Doe"
+                    selectedCity: "london"
+                    createdAt: "2026-01-10T12:00:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags: [User]
+      summary: Update current user profile
+      description: Update mutable profile fields. Currently only `selectedCity`.
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMeRequest'
+            examples:
+              changeCity:
+                value:
+                  selectedCity: "nyc"
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /me/feed:
+    get:
+      tags: [Feed]
+      summary: Get the user's weekly feed
+      description: |
+        Returns the current week's spot for the user's selected city (with the user's
+        invite/RSVP state and aggregate RSVP counts), plus up to 4 weeks of history.
+      operationId: getFeed
+      parameters:
+        - name: city
+          in: query
+          required: false
+          description: |
+            Override the city. Defaults to the user's `selectedCity` when omitted.
+          schema:
+            type: string
+            example: "london"
+        - name: historyWeeks
+          in: query
+          required: false
+          description: Number of past weeks to include (max 4).
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 4
+            default: 4
+      responses:
+        '200':
+          description: Feed payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feed'
+              examples:
+                default:
+                  value:
+                    city: "london"
+                    current:
+                      spot:
+                        id: "london_2026-W26"
+                        city: "london"
+                        weekId: "2026-W26"
+                        venueId: "ChIJ_places_id"
+                        venueName: "The Mayflower"
+                        address: "117 Rotherhithe St, London"
+                        photoUrl: "https://cdn.example.com/p.jpg"
+                        rating: 4.6
+                        reviewCount: 1280
+                        hours:
+                          mon: { open: "12:00", close: "23:00" }
+                      invite:
+                        id: "uid_abc123_2026-W26"
+                        userId: "uid_abc123"
+                        weekId: "2026-W26"
+                        venueId: "ChIJ_places_id"
+                        city: "london"
+                        status: "INVITED"
+                        timestamp: "2026-06-22T09:00:00Z"
+                      counts:
+                        invited: 40
+                        yes: 12
+                        no: 5
+                        interested: 8
+                    history:
+                      - spot:
+                          id: "london_2026-W25"
+                          city: "london"
+                          weekId: "2026-W25"
+                          venueId: "ChIJ_other"
+                          venueName: "The Anchor"
+                          address: "34 Park St, London"
+                          photoUrl: "https://cdn.example.com/a.jpg"
+                          rating: 4.3
+                          reviewCount: 980
+                          hours: {}
+                        invite:
+                          id: "uid_abc123_2026-W25"
+                          userId: "uid_abc123"
+                          weekId: "2026-W25"
+                          venueId: "ChIJ_other"
+                          city: "london"
+                          status: "YES"
+                          timestamp: "2026-06-15T18:30:00Z"
+                        counts:
+                          invited: 38
+                          yes: 20
+                          no: 3
+                          interested: 6
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No active spot found for the city/week
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /invites/{inviteId}/rsvp:
+    post:
+      tags: [Invites]
+      summary: Respond to an invite
+      description: |
+        Set the RSVP status for the authenticated user's invite. The caller may only
+        modify their own invite. Valid target statuses are YES, NO, INTERESTED.
+      operationId: rsvpInvite
+      parameters:
+        - name: inviteId
+          in: path
+          required: true
+          description: Invite document id, format `{userId}_{weekId}`.
+          schema:
+            type: string
+            example: "uid_abc123_2026-W26"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RsvpRequest'
+            examples:
+              yes:
+                value:
+                  status: "YES"
+      responses:
+        '200':
+          description: Updated invite with refreshed counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RsvpResponse'
+              examples:
+                default:
+                  value:
+                    invite:
+                      id: "uid_abc123_2026-W26"
+                      userId: "uid_abc123"
+                      weekId: "2026-W26"
+                      venueId: "ChIJ_places_id"
+                      city: "london"
+                      status: "YES"
+                      timestamp: "2026-06-27T10:15:00Z"
+                    counts:
+                      invited: 40
+                      yes: 13
+                      no: 5
+                      interested: 8
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The invite does not belong to the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /push-tokens:
+    post:
+      tags: [PushTokens]
+      summary: Register a device push token
+      description: |
+        Upsert the device's push token for the authenticated user. Re-registering an
+        existing token updates `lastUsedAt` and marks it valid (idempotent).
+      operationId: registerPushToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterPushTokenRequest'
+            examples:
+              ios:
+                value:
+                  deviceToken: "abcd1234apnsToken"
+                  platform: "ios"
+      responses:
+        '200':
+          description: Token registered or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushToken'
+              examples:
+                default:
+                  value:
+                    id: "sha256_of_token"
+                    userId: "uid_abc123"
+                    deviceToken: "abcd1234apnsToken"
+                    platform: "ios"
+                    createdAt: "2026-06-27T10:00:00Z"
+                    lastUsedAt: "2026-06-27T10:00:00Z"
+                    isValid: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID token issued after sign in.
+
+  schemas:
+    AppleSignInRequest:
+      type: object
+      required: [identityToken]
+      properties:
+        identityToken:
+          type: string
+          description: Apple identity JWT from ASAuthorization.
+        authorizationCode:
+          type: string
+          description: Apple authorization code (optional, used for token revocation).
+        fullName:
+          type: string
+          description: Provided by Apple only on first sign in.
+
+    GoogleSignInRequest:
+      type: object
+      required: [idToken]
+      properties:
+        idToken:
+          type: string
+          description: Google ID token (JWT) from Google Sign In SDK.
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    AuthSession:
+      type: object
+      required: [idToken, refreshToken, expiresIn, user]
+      properties:
+        idToken:
+          type: string
+          description: Firebase ID token; pass as Bearer on subsequent calls.
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: ID token lifetime in seconds.
+          example: 3600
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      required: [id, email, name, selectedCity, createdAt]
+      properties:
+        id:
+          type: string
+          description: Firebase Auth UID.
+          example: "uid_abc123"
+        email:
+          type: string
+          format: email
+          example: "alex@example.com"
+        name:
+          type: string
+          example: "Alex Doe"
+        selectedCity:
+          type: string
+          description: City document id.
+          example: "london"
+        createdAt:
+          type: string
+          format: date-time
+
+    UpdateMeRequest:
+      type: object
+      minProperties: 1
+      properties:
+        selectedCity:
+          type: string
+          description: City document id; must reference an active city.
+          example: "nyc"
+
+    City:
+      type: object
+      required: [id, name, isActive, timezone]
+      properties:
+        id:
+          type: string
+          example: "london"
+        name:
+          type: string
+          example: "London"
+        isActive:
+          type: boolean
+        timezone:
+          type: string
+          description: IANA timezone.
+          example: "Europe/London"
+
+    WeeklySpot:
+      type: object
+      required: [id, city, weekId, venueId, venueName, address, rating, reviewCount]
+      properties:
+        id:
+          type: string
+          example: "london_2026-W26"
+        city:
+          type: string
+          example: "london"
+        weekId:
+          type: string
+          description: ISO week identifier.
+          example: "2026-W26"
+        venueId:
+          type: string
+          description: Google Places ID.
+        venueName:
+          type: string
+        address:
+          type: string
+        photoUrl:
+          type: [string, "null"]
+          format: uri
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+        reviewCount:
+          type: integer
+          minimum: 0
+        hours:
+          type: object
+          description: Map of weekday to open/close times.
+          additionalProperties:
+            type: object
+            properties:
+              open:
+                type: string
+                example: "17:00"
+              close:
+                type: string
+                example: "23:00"
+
+    InviteStatus:
+      type: string
+      enum: [INVITED, YES, NO, INTERESTED]
+
+    Invite:
+      type: object
+      required: [id, userId, weekId, venueId, city, status, timestamp]
+      properties:
+        id:
+          type: string
+          example: "uid_abc123_2026-W26"
+        userId:
+          type: string
+        weekId:
+          type: string
+        venueId:
+          type: string
+        city:
+          type: string
+        status:
+          $ref: '#/components/schemas/InviteStatus'
+        timestamp:
+          type: string
+          format: date-time
+
+    RsvpCounts:
+      type: object
+      required: [invited, yes, no, interested]
+      properties:
+        invited:
+          type: integer
+          minimum: 0
+        yes:
+          type: integer
+          minimum: 0
+        no:
+          type: integer
+          minimum: 0
+        interested:
+          type: integer
+          minimum: 0
+
+    FeedEntry:
+      type: object
+      required: [spot, counts]
+      properties:
+        spot:
+          $ref: '#/components/schemas/WeeklySpot'
+        invite:
+          oneOf:
+            - $ref: '#/components/schemas/Invite'
+            - type: "null"
+          description: The current user's invite for this week, if one exists.
+        counts:
+          $ref: '#/components/schemas/RsvpCounts'
+
+    Feed:
+      type: object
+      required: [city, current, history]
+      properties:
+        city:
+          type: string
+          example: "london"
+        current:
+          $ref: '#/components/schemas/FeedEntry'
+        history:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/FeedEntry'
+
+    RsvpRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [YES, NO, INTERESTED]
+          description: Target RSVP status. INVITED is not a valid target.
+
+    RsvpResponse:
+      type: object
+      required: [invite, counts]
+      properties:
+        invite:
+          $ref: '#/components/schemas/Invite'
+        counts:
+          $ref: '#/components/schemas/RsvpCounts'
+
+    RegisterPushTokenRequest:
+      type: object
+      required: [deviceToken, platform]
+      properties:
+        deviceToken:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android]
+
+    PushToken:
+      type: object
+      required: [id, userId, deviceToken, platform, createdAt, lastUsedAt, isValid]
+      properties:
+        id:
+          type: string
+          description: SHA-256 hash of the device token.
+        userId:
+          type: string
+        deviceToken:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android]
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+        isValid:
+          type: boolean
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+          example: "INVALID_ARGUMENT"
+        message:
+          type: string
+          description: Human-readable error message.
+          example: "selectedCity must reference an active city."
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional structured error context.
+
+  responses:
+    BadRequest:
+      description: The request was malformed or failed validation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "INVALID_ARGUMENT"
+            message: "status must be one of YES, NO, INTERESTED."
+    Unauthorized:
+      description: Missing or invalid authentication token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "UNAUTHENTICATED"
+            message: "Bearer token is missing or expired."
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "NOT_FOUND"
+            message: "Resource not found."
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "INTERNAL"
+            message: "An unexpected error occurred. Please try again."

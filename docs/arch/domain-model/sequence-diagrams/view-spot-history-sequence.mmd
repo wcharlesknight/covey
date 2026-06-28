@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    actor User as User (iOS)
+    participant App as iOS App
+    participant Backend as Backend (Lambda API)
+    participant DB as Firebase (Firestore)
+
+    Note over User,DB: UC-004 View This Week's Spot + UC-005 View 4-Week History
+
+    User->>App: open app
+    activate App
+    App->>Backend: GET /me/feed (session token)
+    activate Backend
+
+    Backend->>Backend: validate session token
+    alt session invalid / expired
+        Backend-->>App: 401 Unauthorized
+        App-->>User: prompt re-authentication (UC-001)
+    else session valid
+        Backend->>DB: read User(userId)
+        DB-->>Backend: User(selectedCity)
+
+        Backend->>DB: read WeeklySpot(city=selectedCity, currentWeekId)
+        alt no spot for current week
+            DB-->>Backend: empty
+            Backend-->>App: 200 { currentSpot: null, history: [...] }
+            App-->>User: show "no spot selected yet"
+        else spot found
+            DB-->>Backend: WeeklySpot (current)
+
+            Backend->>DB: read WeeklySpot(city=selectedCity, last 4 weekIds) [UC-005]
+            DB-->>Backend: [WeeklySpot history...]
+
+            Note over Backend: Enrich each spot with invite and RSVP counts
+
+            loop for current + each history spot
+                Backend->>DB: count Invite(venueId, weekId, status=INVITED)
+                DB-->>Backend: inviteCount
+                Backend->>DB: count Invite(venueId, weekId, status=YES)
+                DB-->>Backend: yesCount
+                Backend->>DB: count Invite(venueId, weekId, status=INTERESTED)
+                DB-->>Backend: interestedCount
+                opt friend graph enabled
+                    Backend->>DB: read UserFriend(userId) then Invite(friendIds, venueId, status=YES)
+                    DB-->>Backend: friendYesCount
+                end
+            end
+
+            Backend-->>App: 200 { currentSpot, history[], inviteCounts, rsvpCounts }
+            App-->>User: render spot details + 4-week history + "X invited · Y confirmed"
+        end
+    end
+    deactivate Backend
+    deactivate App

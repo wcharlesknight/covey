@@ -1,0 +1,32 @@
+flowchart TD
+    A([User taps push notification\nor opens app directly]) --> B{Valid session\ntoken in Keychain?}
+    B -->|No| C[Display Sign In screen\nUC-001]
+    C --> D[User authenticates\nApple or Google]
+    D --> E{Auth\nsuccess?}
+    E -->|No| F[Display error:\nSign in failed — try again]
+    F --> C
+    E -->|Yes| G[Store new session token\nin iOS Keychain]
+    B -->|Yes| H[Read user city from\nlast known location]
+    G --> H
+    H --> I{City\nknown?}
+    I -->|No — location not granted| J[Show city selector prompt\nor request location permission UC-002]
+    J --> K[User selects or confirms city]
+    K --> L[Fetch this week's spot from Firebase\nvia Backend Service]
+    I -->|Yes| L
+    L --> M{Spot found\nfor current week?}
+    M -->|No| N[Display: Check back Thursday\nfor this week's spot]
+    N --> O[Show most recent historical spot\nas context if available]
+    O --> P[Fetch 4-week history\nUC-010]
+    M -->|Yes| Q[Display spot detail screen:\nname · address · photo · hours · description]
+    Q --> P
+    P --> R{History\nreturned?}
+    R -->|Firebase timeout or error| S[Display cached history\nwith Last updated label]
+    S --> T[Fetch social signals:\ncheckin count · friend visit count UC-006]
+    R -->|Success| U[Display 4-week history\nscrollable card stack below spot]
+    U --> T
+    T --> V{Social signals\nreturned?}
+    V -->|Error| W[Show checkin count as 0\nno friend breakdown]
+    V -->|Success| X[Display inline:\nX people checked in · Y friends]
+    W --> Y[Display I'm Here button\nif user is near venue UC-007]
+    X --> Y
+    Y --> Z([Spot detail screen fully loaded])

@@ -1,0 +1,322 @@
+{
+  "projectName": "covey",
+  "description": "iOS social gathering app that notifies users of weekly curated local venues and lets them RSVP",
+  "startedAt": "2026-06-27T00:00:00Z",
+  "workflowMode": "team",
+  "modules": {
+    "core": ["Requirements", "Architecture", "UX", "Testing"],
+    "contextual": ["Security", "Database", "DevOps", "Quality", "Project Management"]
+  },
+  "timeline": "MVP, no rush",
+  "team": "Solo/small",
+  "scope": {
+    "in": [
+      "iOS app (React Native or native Swift)",
+      "Weekly curated venue notifications",
+      "RSVP functionality (Yes / Maybe / No)",
+      "City selection",
+      "4-week venue history",
+      "Push notifications with deep link",
+      "Sign in with Apple and Google"
+    ],
+    "out": [
+      "Production scaling",
+      "Multiple notification frequencies",
+      "Advanced analytics",
+      "Friend graphs / social network"
+    ]
+  },
+  "personas": [
+    {
+      "id": "maya-commuter",
+      "name": "Maya Okafor",
+      "role": "Urban Commuter",
+      "demographics": {
+        "age": "28-34",
+        "location": "Seattle, WA",
+        "experience": "Heavy smartphone user, 3 years in Seattle"
+      },
+      "goals": [
+        "Discover new local spots without spending time researching",
+        "Meet up with existing friends at a pre-agreed place",
+        "RSVP quickly while on the bus or between meetings"
+      ],
+      "context": {
+        "environment": "On the go: transit, coffee shops, lunch breaks",
+        "devices": ["iPhone (primary, always at hand)", "iPad (occasional, home)"],
+        "constraints": ["Checks phone in short windows (< 2 min)", "Often one-handed", "Noisy environment"]
+      },
+      "painPoints": [
+        "Group chats go silent after 'where should we go?' messages",
+        "Too many options leads to decision fatigue",
+        "Hard to know if friends are actually attending"
+      ],
+      "capabilities": {
+        "technicalExpertise": "intermediate",
+        "domainKnowledge": "Familiar with Yelp, Google Maps, Instagram",
+        "cognitiveLoad": "High during commute — wants zero friction",
+        "timeAvailable": "30–90 seconds per session"
+      },
+      "accessibility": {
+        "visualNeeds": "None",
+        "motorNeeds": "One-handed use common",
+        "assistiveTech": []
+      },
+      "topTasks": [
+        {
+          "id": "check-weekly-spot",
+          "description": "Open app and immediately see this week's venue",
+          "frequency": "weekly (Thursday–Sunday)",
+          "importance": "critical"
+        },
+        {
+          "id": "rsvp-quick",
+          "description": "Tap Yes / Maybe / Nope in under 5 seconds",
+          "frequency": "weekly",
+          "importance": "critical"
+        },
+        {
+          "id": "see-who-is-going",
+          "description": "Check friend/community counts before deciding",
+          "frequency": "weekly",
+          "importance": "high"
+        }
+      ],
+      "quote": "Just tell me where we're going — I'll be there.",
+      "confirmed": true
+    },
+    {
+      "id": "james-traveler",
+      "name": "James Whitfield",
+      "role": "Frequent Traveler / Remote Worker",
+      "demographics": {
+        "age": "32-40",
+        "location": "Nomadic — currently Seattle",
+        "experience": "Uses city-guide apps regularly, tech-savvy"
+      },
+      "goals": [
+        "Find genuine local spots rather than tourist traps",
+        "Connect with locals or other travelers in a new city",
+        "Understand the vibe of a venue before going"
+      ],
+      "context": {
+        "environment": "Hotels, co-working spaces, airports",
+        "devices": ["iPhone (primary)", "MacBook (work)"],
+        "constraints": ["Unfamiliar with local geography", "Might be in a different time zone", "Limited local social network"]
+      },
+      "painPoints": [
+        "Generic travel guides don't surface community-endorsed spots",
+        "Hard to tell if a venue is lively on a given night",
+        "Doesn't know anyone in the city to co-ordinate with"
+      ],
+      "capabilities": {
+        "technicalExpertise": "high",
+        "domainKnowledge": "Yelp, TripAdvisor, Google Maps expert",
+        "cognitiveLoad": "Medium — has time to explore app",
+        "timeAvailable": "3–5 minutes per session"
+      },
+      "accessibility": {
+        "visualNeeds": "None",
+        "motorNeeds": "None",
+        "assistiveTech": []
+      },
+      "topTasks": [
+        {
+          "id": "select-city",
+          "description": "Choose the city he is currently in",
+          "frequency": "per trip (monthly)",
+          "importance": "critical"
+        },
+        {
+          "id": "explore-venue-detail",
+          "description": "Read hours, address, rating before deciding to go",
+          "frequency": "weekly",
+          "importance": "high"
+        },
+        {
+          "id": "view-history",
+          "description": "Browse past spots to understand the curation quality",
+          "frequency": "first session in a new city",
+          "importance": "medium"
+        }
+      ],
+      "quote": "Show me where the locals actually go, not the tourist version.",
+      "confirmed": true
+    },
+    {
+      "id": "priya-newcomer",
+      "name": "Priya Nair",
+      "role": "New Resident",
+      "demographics": {
+        "age": "25-30",
+        "location": "Recently moved to Seattle",
+        "experience": "Moderate smartphone user; used similar apps briefly"
+      },
+      "goals": [
+        "Build a social routine in a new city",
+        "Discover the neighborhood without endless Googling",
+        "Feel less alone during the first months"
+      ],
+      "context": {
+        "environment": "Home, office, walking the neighborhood",
+        "devices": ["iPhone (primary)", "MacBook (work)"],
+        "constraints": ["No established friend group locally yet", "Anxiety about going to new places alone", "Budget-conscious"]
+      },
+      "painPoints": [
+        "Overwhelmed by choice when exploring a new city",
+        "Social plans fall through because coordination is hard",
+        "Doesn't know if a place is safe or welcoming"
+      ],
+      "capabilities": {
+        "technicalExpertise": "intermediate",
+        "domainKnowledge": "Has used Meetup, Bumble BFF; familiar with RSVP concepts",
+        "cognitiveLoad": "Medium — willing to learn the app's rhythm",
+        "timeAvailable": "2–5 minutes per session"
+      },
+      "accessibility": {
+        "visualNeeds": "Mild astigmatism — prefers larger text",
+        "motorNeeds": "None",
+        "assistiveTech": []
+      },
+      "topTasks": [
+        {
+          "id": "onboard-city",
+          "description": "Sign in and pick her city on first launch",
+          "frequency": "once",
+          "importance": "critical"
+        },
+        {
+          "id": "read-venue-detail",
+          "description": "Read address, rating, and hours to feel confident before going",
+          "frequency": "weekly",
+          "importance": "high"
+        },
+        {
+          "id": "rsvp-interested",
+          "description": "Mark Maybe so she keeps the option open",
+          "frequency": "weekly",
+          "importance": "high"
+        }
+      ],
+      "quote": "I just want somewhere to show up where I know at least a few people might be.",
+      "confirmed": true
+    }
+  ],
+  "journeys": [
+    {
+      "id": "weekly-spot-rsvp",
+      "title": "View Weekly Spot and RSVP",
+      "personaId": "maya-commuter",
+      "scenario": "Maya receives a Thursday push notification about this week's Seattle spot. She taps it while on the bus, lands on the home feed, reads the venue card, and taps Yes.",
+      "successCriteria": [
+        "Lands on Home Feed within 2 seconds of tapping notification",
+        "Venue name and address visible without scrolling",
+        "RSVP completed in under 5 seconds",
+        "Count updates immediately after RSVP"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Receive push notification: 'This week's Seattle spot: The Mayflower'",
+          "expected": "Notification appears on lock screen with venue name",
+          "touchpoint": "iOS Notification Center",
+          "emotion": "curious",
+          "issues": ["Notification may be missed if Do Not Disturb is on"]
+        },
+        {
+          "step": 2,
+          "action": "Tap notification",
+          "expected": "App opens cold or warm to Home Feed, venue card scrolled into view",
+          "touchpoint": "Home Feed Screen",
+          "emotion": "satisfied",
+          "issues": ["Cold launch adds ~1-2s delay"]
+        },
+        {
+          "step": 3,
+          "action": "Scan venue card (name, photo, address)",
+          "expected": "Hero image prominent, name bold, address visible",
+          "touchpoint": "Venue Card",
+          "emotion": "neutral",
+          "issues": []
+        },
+        {
+          "step": 4,
+          "action": "Tap 'Yes' RSVP button",
+          "expected": "Button toggles to selected (green), count increments, haptic feedback",
+          "touchpoint": "RSVP Toggle",
+          "emotion": "delighted",
+          "issues": []
+        }
+      ]
+    },
+    {
+      "id": "first-launch-onboard",
+      "title": "First Launch — Sign In and City Selection",
+      "personaId": "priya-newcomer",
+      "scenario": "Priya downloads Covey after a colleague mentions it. She opens the app, signs in with Apple, and picks Seattle as her city before landing on the Home Feed.",
+      "successCriteria": [
+        "Sign-in completed in under 30 seconds",
+        "City selected within 10 seconds of seeing the list",
+        "Home Feed visible immediately after city selection",
+        "No confusing steps or required profile fields"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Open Covey for the first time",
+          "expected": "Sign-In screen with logo, tagline, Apple and Google buttons",
+          "touchpoint": "Sign-In Screen",
+          "emotion": "curious",
+          "issues": []
+        },
+        {
+          "step": 2,
+          "action": "Tap 'Sign in with Apple'",
+          "expected": "Native Apple auth sheet appears; user approves",
+          "touchpoint": "iOS Sign In with Apple sheet",
+          "emotion": "neutral",
+          "issues": ["Some users distrust sharing email"]
+        },
+        {
+          "step": 3,
+          "action": "Select 'Seattle' from city list",
+          "expected": "Seattle card highlights, confirm button activates",
+          "touchpoint": "City Selection Screen",
+          "emotion": "satisfied",
+          "issues": []
+        },
+        {
+          "step": 4,
+          "action": "Tap confirm / continue",
+          "expected": "Transitions to Home Feed showing this week's spot",
+          "touchpoint": "Home Feed Screen",
+          "emotion": "delighted",
+          "issues": ["If no spot yet (pre-Thursday), show empty state"]
+        }
+      ]
+    }
+  ],
+  "checkpoints": {
+    "kickoff": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "scenarios": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "useCases": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "domainModel": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "dataModel": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "apiContract": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "prototypes": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "security": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "quality": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "projectManagement": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "supporting": { "status": "confirmed", "confirmedAt": "2026-06-27" },
+    "signoff": { "status": "confirmed", "confirmedAt": "2026-06-27" }
+  },
+  "artifacts": [
+    { "path": "docs/ux/design-tokens.md", "stage": "prototypes" },
+    { "path": "docs/ux/screens/sign-in.story.tsx", "stage": "prototypes" },
+    { "path": "docs/ux/screens/city-selection.story.tsx", "stage": "prototypes" },
+    { "path": "docs/ux/screens/home-feed.story.tsx", "stage": "prototypes" },
+    { "path": "docs/ux/screens/rsvp-toggle.story.tsx", "stage": "prototypes" },
+    { "path": "docs/ux/screens/empty-state.story.tsx", "stage": "prototypes" },
+    { "path": "docs/ux/screens/notification-tap.story.tsx", "stage": "prototypes" }
+  ]
+}

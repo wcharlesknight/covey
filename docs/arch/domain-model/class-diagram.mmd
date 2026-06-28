@@ -1,0 +1,101 @@
+classDiagram
+    direction LR
+
+    class User {
+        +id: UUID
+        +email: String
+        +name: String
+        +selectedCity: String
+        +createdAt: DateTime
+        +lastUpdatedAt: DateTime
+    }
+
+    class City {
+        +id: String
+        +name: String
+        +isActive: Boolean
+        +timezone: String
+    }
+
+    class WeeklySpot {
+        +id: UUID
+        +city: String
+        +weekId: String
+        +venueId: String
+        +venueName: String
+        +address: String
+        +photoUrl: String
+        +rating: Double
+        +reviewCount: Int
+        +hours: String
+        +createdAt: DateTime
+    }
+
+    class Invite {
+        +id: UUID
+        +userId: UUID
+        +weekId: String
+        +venueId: String
+        +city: String
+        +status: InviteStatus
+        +timestamp: DateTime
+    }
+
+    class PushToken {
+        +id: UUID
+        +userId: UUID
+        +deviceToken: String
+        +platform: Platform
+        +createdAt: DateTime
+        +lastUsedAt: DateTime
+        +isValid: Boolean
+    }
+
+    class EmailAddress {
+        +id: UUID
+        +userId: UUID
+        +email: String
+        +isVerified: Boolean
+        +createdAt: DateTime
+    }
+
+    class VenueExclusionList {
+        +id: UUID
+        +city: String
+        +weekId: String
+        +venueIds: List~String~
+    }
+
+    class UserFriend {
+        +userId: UUID
+        +friendId: UUID
+        +createdAt: DateTime
+    }
+
+    class InviteStatus {
+        <<enumeration>>
+        INVITED
+        YES
+        NO
+        INTERESTED
+    }
+
+    class Platform {
+        <<enumeration>>
+        IOS
+    }
+
+    %% --- Relationships ---
+    User "1" --> "*" Invite : receives
+    User "1" --> "*" PushToken : registers
+    User "1" --> "0..1" EmailAddress : has
+    User "1" --> "*" UserFriend : follows
+
+    City "1" --> "*" WeeklySpot : features
+    City "1" --> "*" VenueExclusionList : tracks
+
+    WeeklySpot "1" --> "*" Invite : generates
+    WeeklySpot "*" --> "1" VenueExclusionList : excluded-by
+
+    Invite ..> InviteStatus : uses
+    PushToken ..> Platform : uses

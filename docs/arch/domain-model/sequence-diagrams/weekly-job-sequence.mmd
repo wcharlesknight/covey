@@ -1,0 +1,77 @@
+sequenceDiagram
+    autonumber
+    actor EventBridge as EventBridge (Scheduler)
+    participant Lambda as WeeklyJobLambda
+    participant DB as Firebase (Firestore)
+    participant Places as GooglePlacesAPI
+    participant APNs as APNs
+    participant Email as EmailService
+
+    Note over EventBridge,Email: UC-008 Weekly Scheduled Job - select spot and create invites
+
+    EventBridge->>Lambda: trigger(cron) Thursday 08:00
+    activate Lambda
+
+    Lambda->>DB: query all Cities where isActive == true
+    DB-->>Lambda: [City...]
+
+    loop for each active City
+        Lambda->>DB: read VenueExclusionList(city, last 4 weekIds)
+        DB-->>Lambda: excludedVenueIds[]
+
+        Lambda->>Places: nearbySearch(city, type=bar/cafe/restaurant)
+        alt Places API success
+            Places-->>Lambda: candidateVenues[]
+
+            Note over Lambda: Curate - rating >= 4.0,<br/>reviewCount >= 50,<br/>open weekdays,<br/>NOT in excludedVenueIds
+
+            alt at least one venue passes curation
+                Lambda->>Lambda: select spot (highest ranked eligible)
+                Lambda->>DB: write WeeklySpot(city, weekId, venue...)
+                Lambda->>DB: update VenueExclusionList(city, weekId, +venueId)
+
+                Lambda->>DB: query Users where selectedCity == city
+                DB-->>Lambda: [User...]
+
+                Note over Lambda: Create Invite records for all users in this city
+
+                loop for each User in city
+                    Lambda->>DB: write Invite(userId, weekId, venueId, city, status=INVITED)
+                end
+
+                Lambda->>DB: read all PushToken(platform=IOS, isValid=true) for users in city
+                DB-->>Lambda: [deviceToken...]
+
+                loop for each valid device token
+                    Lambda->>APNs: push(deviceToken, spot payload)
+                    alt token rejected (410 / BadDeviceToken)
+                        APNs-->>Lambda: error stale token
+                        Lambda->>DB: mark PushToken.isValid = false
+                    else delivered
+                        APNs-->>Lambda: 200 OK
+                        Lambda->>DB: update PushToken.lastUsedAt
+                    end
+                end
+
+                Lambda->>DB: read all EmailAddress(isVerified=true) for users in city
+                DB-->>Lambda: [email...]
+
+                loop for each verified email
+                    Lambda->>Email: send(email, spot details + RSVP link)
+                    Email-->>Lambda: queued
+                end
+
+            else no eligible venue (all filtered/excluded)
+                Note over Lambda: Failure branch - skip city this week
+                Lambda->>DB: log warning(city, weekId, "no eligible venue")
+            end
+
+        else Places API failure / quota
+            Places-->>Lambda: error
+            Note over Lambda: Failure branch - skip city, retry next run
+            Lambda->>DB: log error(city, weekId, places error)
+        end
+    end
+
+    Lambda-->>EventBridge: complete (per-city status summary)
+    deactivate Lambda
