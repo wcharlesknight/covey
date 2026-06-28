@@ -48,14 +48,14 @@ checkstyle {
 sourceSets {
     smokeTest {
         java.srcDir 'src/smokeTest/java'
-        compileClasspath += sourceSets.main.output + configurations.testCompile
-        runtimeClasspath += sourceSets.main.output + configurations.testRuntime
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
     }
 }
 
 configurations {
-    smokeTestCompile.extendsFrom testCompile
-    smokeTestRuntime.extendsFrom testRuntime
+    smokeTestImplementation.extendsFrom testImplementation
+    smokeTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 test {
