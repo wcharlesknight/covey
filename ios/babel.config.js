@@ -12,7 +12,7 @@ module.exports = {
   env: {
     test: {
       presets: [
-        ['@babel/preset-env', { targets: { node: 'current' } }],
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
         '@babel/preset-flow',
         '@babel/preset-typescript',
         ['@babel/preset-react', { runtime: 'automatic' }],
