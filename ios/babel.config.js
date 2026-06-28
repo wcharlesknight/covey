@@ -8,6 +8,7 @@ module.exports = {
   plugins: [
     '@babel/plugin-proposal-class-properties',
     '@babel/plugin-transform-flow-strip-types',
+    '@babel/plugin-transform-private-methods',
   ],
   env: {
     test: {
@@ -20,6 +21,7 @@ module.exports = {
       plugins: [
         '@babel/plugin-proposal-class-properties',
         '@babel/plugin-transform-flow-strip-types',
+        '@babel/plugin-transform-private-methods',
       ],
     },
   },
