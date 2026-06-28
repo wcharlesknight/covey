@@ -16,7 +16,6 @@
       "**/*"
     ],
     "ios": {
-      "supportsTabletMode": true,
       "bundleIdentifier": "com.covey.app",
       "buildNumber": "1"
     },
