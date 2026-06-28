@@ -40,7 +40,7 @@ jobs:
       - name: Build backend and create Lambda package
         run: cd backend && gradle build createLambdaZip -x test
 
-      - name: Deploy Lambda function
+      - name: Deploy Lambda function code
         run: |
           aws lambda update-function-code \
             --function-name covey-weekly-spot-dev \
@@ -50,6 +50,14 @@ jobs:
           # Wait for update to complete
           aws lambda wait function-updated \
             --function-name covey-weekly-spot-dev \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Configure Lambda runtime and handler
+        run: |
+          aws lambda update-function-configuration \
+            --function-name covey-weekly-spot-dev \
+            --runtime java17 \
+            --handler com.covey.handlers.AuthHandler::handleRequest \
             --region ${{ env.AWS_REGION }}
 
       - name: Verify Lambda deployment
