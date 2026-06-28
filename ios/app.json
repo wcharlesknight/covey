@@ -3,6 +3,7 @@
     "name": "Covey",
     "slug": "covey",
     "version": "1.0.0",
+    "scheme": "covey",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
