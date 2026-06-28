@@ -8,13 +8,13 @@ module.exports = {
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
+    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(expo|expo-modules-autolinking|react-native|@react-navigation)/)',
+    'node_modules/(?!(expo|expo-modules-autolinking|react-native|@react-navigation|zustand|axios)/)',
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
