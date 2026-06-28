@@ -59,15 +59,20 @@ aws lambda invoke --function-name covey-weekly-spot-dev --region us-west-2 \
 
 ---
 
-## 📖 How to Find Memory
+## 📖 Documentation & Memory
 
-The detailed progress memory is stored in:
+**Progress Memory** (persistent across sessions):
 - **Path:** `/Users/charlieknight/.claude/projects/-Users-charlieknight/memory/covey_wbs_progress.md`
-- **Type:** Persistent memory (survives across sessions)
-- **Updated:** After each session pause
+- **Auto-loaded:** Claude Code reads this at session start
 - **Contains:** Full WBS status, branches, files, infrastructure details
 
-Claude Code will automatically read this memory at the start of each session.
+**Project Planning Docs** (in covey repo):
+- `covey/docs/pm/wbs.md` - Work Breakdown Structure
+- `covey/docs/pm/charter.md` - Project Charter
+- `covey/docs/pm/schedule.md` - Timeline and Milestones
+- `covey/docs/pm/risk-register.csv` - Risk Register
+
+All docs are now in the covey project for easy access!
 
 ---
 
