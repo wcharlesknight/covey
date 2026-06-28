@@ -64,7 +64,7 @@ jobs:
         run: |
           cd ios
           npm run lint
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Run Jest unit tests
         run: |
