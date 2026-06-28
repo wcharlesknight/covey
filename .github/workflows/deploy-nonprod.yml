@@ -40,11 +40,30 @@ jobs:
       - name: Build backend and create Lambda package
         run: cd backend && gradle build createLambdaZip -x test
 
-      - name: Deploy Lambda function code
+      - name: Upload Lambda package to S3
+        run: |
+          BUCKET="covey-lambda-deployments-dev"
+          TIMESTAMP=$(date +%s)
+          S3_KEY="covey-lambda-${TIMESTAMP}.zip"
+
+          # Create bucket if it doesn't exist
+          aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null || \
+            aws s3api create-bucket --bucket "$BUCKET" \
+              --region ${{ env.AWS_REGION }} \
+              --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
+
+          # Upload to S3
+          aws s3 cp backend/build/distributions/covey-lambda.zip "s3://$BUCKET/$S3_KEY"
+
+          echo "LAMBDA_S3_BUCKET=$BUCKET" >> $GITHUB_ENV
+          echo "LAMBDA_S3_KEY=$S3_KEY" >> $GITHUB_ENV
+
+      - name: Deploy Lambda function code from S3
         run: |
           aws lambda update-function-code \
             --function-name covey-weekly-spot-dev \
-            --zip-file fileb://backend/build/distributions/covey-lambda.zip \
+            --s3-bucket ${{ env.LAMBDA_S3_BUCKET }} \
+            --s3-key ${{ env.LAMBDA_S3_KEY }} \
             --region ${{ env.AWS_REGION }}
 
           # Wait for update to complete

@@ -16,7 +16,6 @@
       "**/*"
     ],
     "ios": {
-      "supportsTabletMode": true,
       "bundleIdentifier": "com.covey.app",
       "buildNumber": "1"
     },
@@ -49,7 +48,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
+        "projectId": "36924851-085c-4e48-8e07-94098d4b6b7b"
       }
     },
     "owner": "williamchknight"
