@@ -48,6 +48,7 @@ test {
         destinationFile = file("${buildDir}/jacoco/test.exec")
     }
     jvmArgs = ['-Dnet.bytebuddy.experimental=true']
+    excludes = ['com/covey/integration/**Test.class', '**/integration/**Test.class']
 }
 
 task integrationTest(type: Test) {
