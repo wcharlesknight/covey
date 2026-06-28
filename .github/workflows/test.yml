@@ -28,6 +28,14 @@ jobs:
       - name: Run all backend tests (unit + integration)
         run: cd backend && gradle allTests -Dnet.bytebuddy.experimental=true
 
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: backend/build/reports/tests/
+          retention-days: 30
+
   # ios-test:
   #   runs-on: macos-latest
   #   name: React Native Tests

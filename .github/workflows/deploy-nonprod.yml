@@ -37,15 +37,8 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsRole
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build backend
-        run: cd backend && gradle build -x test
-
-      - name: Create deployment package
-        run: |
-          cd backend/build/libs
-          ls -la
-          # Adjust based on your Lambda handler artifact name
-          echo "LAMBDA_ARTIFACT=$(ls covey-*.jar | head -1)" >> $GITHUB_ENV
+      - name: Build backend and create Lambda package
+        run: cd backend && gradle build createLambdaZip -x test
 
       - name: Deploy Lambda function
         run: |
