@@ -33,7 +33,16 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
       } else if (path.equals("/push-tokens") && method.equals("POST")) {
         return new PushTokenHandler().handleRequest(event, context);
       } else if (path.equals("/weekly-spot") && method.equals("GET")) {
-        return new WeeklySpotHandler().handleRequest(event, context);
+        Object result = new WeeklySpotHandler().handleRequest(event, context);
+        if (result instanceof Map) {
+          return (Map<String, Object>) result;
+        } else {
+          // Convert JsonObject to Map if needed
+          Map<String, Object> response = new java.util.HashMap<>();
+          response.put("statusCode", 200);
+          response.put("body", result.toString());
+          return response;
+        }
       } else if (path.equals("/auth") && method.equals("POST")) {
         return new AuthHandler().handleRequest(event, context);
       } else {
