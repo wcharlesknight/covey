@@ -115,10 +115,9 @@ task createLambdaZip(type: Zip) {
     // Add the fat JAR as the main classpath
     from fatJar.outputs
 
-    // Make the bootstrap executable if using custom runtime
+    // Include bootstrap script for Lambda custom runtime configuration
     from(file('bootstrap')) {
         into '/'
-        fileMode = 0755
     }
 
     doFirst {
