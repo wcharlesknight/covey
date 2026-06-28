@@ -57,7 +57,7 @@ jobs:
           aws lambda update-function-configuration \
             --function-name covey-weekly-spot-dev \
             --runtime java17 \
-            --handler com.covey.handlers.AuthHandler::handleRequest \
+            --handler com.covey.LambdaRouter::handleRequest \
             --region ${{ env.AWS_REGION }}
 
       - name: Verify Lambda deployment
