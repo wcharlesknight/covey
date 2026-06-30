@@ -185,37 +185,50 @@ All 39 docs files now in covey project for easy access!
 
 ---
 
-## 📝 Latest Session Summary (2026-06-28)
+## 📝 Latest Session Summary (2026-06-29)
 
-### Accomplished:
-1. ✅ **Successfully built iOS app using `npx expo run:ios`**
-   - Xcode compiled all React Native dependencies (React-Core, Yoga, Hermes, etc.)
-   - Build signed with Apple Development team certificate (7RR58R22AF)
-   - CocoaPods installed 73 dependencies successfully
-   - Exit code 0 indicates successful build completion
-   - Build artifacts in `ios/build/` directory
+### 🎉 Major Accomplishment: App Successfully Launching!
 
-2. ✅ **Resolved CocoaPods PATH shadowing issue**
-   - Set rbenv global ruby version to 3.3.9 before pod install
-   - Prevented PATH conflicts with Homebrew cocoapods installation
+1. ✅ **iOS app now running on simulator (Process ID: 75818)**
+   - `npx expo run:ios` build completed with exit code 0
+   - All React Native & CocoaPods dependencies compiled without errors
+   - App installed and launched on iPhone 16 Pro simulator
 
-3. ✅ **Generated native iOS project structure**
-   - `ios/ios/` directory created with Xcode project files
-   - Proper CocoaPods integration configured
-   - All native dependencies compiled and linked
+2. ✅ **Fixed DOMRectReadOnly polyfill with correct Babel handling**
+   - **Initial Problem:** Babel's import hoisting was placing ES6 imports above the polyfill
+   - **Root Cause:** Firebase SDK was initializing before DOMRectReadOnly was defined
+   - **Error Encountered:** `ReferenceError: Property 'DOMRectReadOnly' doesn't exist`
+   - **Solution:**
+     - Created separate `ios/dom-polyfill.js` file
+     - Use `require()` in entry point (CommonJS not subject to Babel hoisting)
+     - Ensures polyfill executes FIRST, then all other modules initialize
+   - **Result:** ✅ JavaScript initialization now succeeds
+
+3. ✅ **Resolved compiler warnings**
+   - Removed: `ld: ignoring duplicate libraries: '-lc++'`
+   - Now building with 0 errors, 0 warnings
 
 ### Status:
-- **Build:** ✅ Successful (npx expo run:ios completed)
-- **Compilation:** ✅ All dependencies compiled without reported errors
-- **Next Action:** Verify app is running/visible on iPhone 16 Pro simulator
-- **Test Plan:** Check SignIn screen renders, no C++ exceptions, basic UI interaction
+- **Build:** ✅ Successful (0 errors, 0 warnings)
+- **JavaScript:** ✅ Firebase SDK initializes without errors
+- **App Launch:** ✅ Running on simulator (PID 75818)
+- **Polyfill:** ✅ Properly preventing Babel hoisting
+
+### Testing Next:
+- Verify app UI renders (SignIn screen should be visible)
+- Test Firebase auth flow
+- Test API connectivity to Lambda backend
+- Verify navigation works
+
+### Key Files Modified:
+- `ios/dom-polyfill.js` — NEW: Separate polyfill file (CommonJS)
+- `ios/index.js` — UPDATED: Use require() for polyfill, then import modules
 
 ### Notes for Next Session:
-- Branch: `feature/expo-local-startup` is active and up to date with origin
-- Untracked build artifacts: `.claude/`, `ios/.expo/`, `ios/assets/`, `ios/ios/` (prebuild output)
-- If app is running: test Firebase auth flow, API connectivity, navigation
-- If app crashed: check Xcode console logs for C++ exception details and build/launch errors
-- QR code issue (NSPOSIXErrorDomain code=60) is a separate CoreSimulator timeout problem
+- Branch: `feature/expo-local-startup` (active)
+- **CRITICAL:** Do NOT move polyfill back to index.js (Babel will hoist it)
+- App is currently running - can now test end-to-end workflows
+- Next priority: Verify SignIn screen renders, test Firebase auth
 
 ---
 
