@@ -1,6 +1,3 @@
-// Force polyfill to execute before any imports (Babel does not hoist require statements)
-require('./dom-polyfill');
-
 import { registerRootComponent } from 'expo';
 import App from './App';
 

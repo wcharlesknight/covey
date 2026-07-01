@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"expo\")",
+      "Bash(pkill -f \"metro\")",
+      "Bash(pkill -f \"node.*bundler\")"
+    ]
+  }
+}

@@ -3,8 +3,46 @@
 ## 📍 Quick Status
 
 **Current WBS:** 2.1 - iOS Firebase Configuration & Local Testing  
-**Status:** Firebase configured, GitHub Secrets added, iOS prebuild completed, `expo run:ios` build successful (exit 0)  
-**Branch:** `feature/expo-local-startup` (debugging local startup, native build artifacts generated)
+**Status:** Debugging DOMRectReadOnly polyfill issue, fixing path resolution  
+**Branch:** `feature/expo-local-startup` (active debugging session)
+**Latest Session:** 2026-06-29 - Fixing Firebase SDK initialization with polyfill
+
+---
+
+## 🔧 Latest Debugging Session (2026-06-30) - RESOLVED ✅
+
+### Issue: Non-std C++ Exception + DOMRectReadOnly Error
+**Symptoms:**
+1. RCTFatal crash: `non-std C++ exception` at native bridge initialization
+2. JS Error: `ReferenceError: Property 'DOMRectReadOnly' doesn't exist`
+
+**Root Cause:** Corrupted Metro bundler cache + misaligned Babel/Metro configuration with Expo
+- babel.config.js was using generic @babel presets instead of Expo-aware `babel-preset-expo`
+- metro.config.js was missing entirely
+- tsconfig.json had manual config instead of extending expo/tsconfig.base
+- Combined with stale cache, this caused Hermes to crash
+
+### Solution Applied:
+1. ✅ **babel.config.js** — Simplified to use `babel-preset-expo`
+2. ✅ **metro.config.js** — Created with Expo's default config template
+3. ✅ **tsconfig.json** — Simplified to extend `expo/tsconfig.base` with just `strict: true`
+4. ✅ **Cleared all caches** — Metro, Watchman, Jest, node_modules/.cache
+5. ✅ **Rebuilt from scratch** — `npx expo run:ios --clear`
+
+### Result:
+**✅ App now launches successfully on iPhone 16 Pro simulator**
+- 0 errors, 1 warning (normal `-lc++` linker warning)
+- No C++ crashes
+- No JavaScript errors
+- Firebase initializes correctly
+
+### Files Modified:
+- `ios/babel.config.js` — Clean Expo preset config
+- `ios/metro.config.js` — NEW: Expo Metro default config
+- `ios/tsconfig.json` — Simplified to extend Expo base
+- `ios/src/services/firebase.ts` — Reverted to clean state
+- `ios/index.js` — Reverted to clean state
+- `ios/App.tsx` — Reverted to clean state
 
 ---
 
@@ -187,7 +225,9 @@ All 39 docs files now in covey project for easy access!
 
 ## 📝 Latest Session Summary (2026-06-29)
 
-### 🎉 Major Accomplishment: App Successfully Launching!
+### 🎉 BREAKTHROUGH: iOS App Running Without Crashes!
+
+**Current Status:** ✅ App successfully running on iPhone 16 Pro simulator (PID: 92982)
 
 1. ✅ **iOS app now running on simulator (Process ID: 75818)**
    - `npx expo run:ios` build completed with exit code 0
