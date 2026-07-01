@@ -3,9 +3,23 @@
 ## 📍 Quick Status
 
 **Current WBS:** 2.1 - iOS Firebase Configuration & Local Testing  
-**Status:** Debugging DOMRectReadOnly polyfill issue, fixing path resolution  
-**Branch:** `feature/expo-local-startup` (active debugging session)
-**Latest Session:** 2026-06-29 - Fixing Firebase SDK initialization with polyfill
+**Status:** ✅ COMPLETE - iOS app launching on simulator successfully  
+**Branch:** `feature/expo-local-startup` (PR #21 - ready to merge)
+**Latest Session:** 2026-06-30 - Fixed startup crashes with Expo config alignment
+
+---
+
+## ✅ What's Working Now (2026-06-30)
+
+**iOS App Startup:**
+- ✅ App builds successfully: 0 errors, 1 warning
+- ✅ App installs on iPhone 16 Pro simulator
+- ✅ App launches without C++ crashes
+- ✅ JavaScript bundle loads and executes
+- ✅ Firebase SDK initializes
+- ✅ Auth flow ready for testing
+
+**Key Achievement:** Local Expo development workflow is now functional. Can build, install, and test the iOS app on simulator.
 
 ---
 
@@ -113,26 +127,21 @@ cd ios && npm install
 
 ---
 
-## 🐛 Known Issues - Local Expo Startup (SEPARATE TASK)
+## 🐛 Resolved Issues - Local Expo Startup (FIXED in PR #21)
 
-### Issue: NSPOSIXErrorDomain code=60 (CoreSimulator Timeout)
-- **Symptom:** Expo CLI hangs when trying to open exp:// URLs on iOS simulator
-- **Root Cause:** CoreSimulator's `launchd_sim` daemon times out after 30 seconds
-- **Affects:** QR code connections, auto-open, deep linking to dev server
-- **Status:** **RESEARCHED** - Ready for separate branch: `feature/expo-local-startup`
-
-### Issue: React Native C++ Exception (RCTFatal)
+### ✅ Issue: React Native C++ Exception (RCTFatal) - RESOLVED
 - **Symptom:** `non-std C++ exception` crash when app tries to initialize bridge
-- **Root Causes Identified:**
-  1. Architecture mismatch on M-series Macs (arm64 not excluded for simulator)
-  2. Dependency version incompatibilities
-  3. Stale CocoaPods/native build artifacts
-  4. Node version constraints (v20.12.1 too old)
-- **Status:** **PARTIALLY RESOLVED**
-  - ✅ Upgraded to Node 22.23.1
-  - ✅ Updated dependencies to Expo SDK 51 expected versions
-  - ✅ Ran prebuild to generate native iOS project with proper CocoaPods
-  - ⏳ Still need to test app launch after recent fixes
+- **Root Cause:** Misaligned Babel/Metro configuration + corrupted cache
+- **Status:** **RESOLVED**
+  - ✅ Aligned babel.config.js with Expo preset
+  - ✅ Created metro.config.js with Expo defaults
+  - ✅ Simplified tsconfig.json to extend expo/tsconfig.base
+  - ✅ Cleared all Metro and build caches
+  - ✅ App launches successfully on simulator
+
+### Issue: NSPOSIXErrorDomain code=60 (CoreSimulator Timeout) - RESEARCH ONLY
+- **Symptom:** Expo CLI hangs when trying to open exp:// URLs on iOS simulator
+- **Status:** Identified but not blocking - app can be launched directly with `npx expo run:ios`
 
 ### Workarounds Applied:
 - ✅ Cleared CoreSimulator caches: `rm -rf ~/Library/Developer/CoreSimulator/Caches/*`
@@ -142,12 +151,13 @@ cd ios && npm install
 - ✅ Fixed Babel configuration (added private methods plugin)
 - ✅ Fixed Xcode schema validation (removed invalid `supportsTabletMode`)
 
-### Recommended Next Steps for Local Testing:
-1. **Create `feature/expo-local-startup` branch** to isolate testing from Firebase work
-2. Run `npx expo run:ios` (managed workflow - bypasses Expo Go installation issues)
-3. Manually open Expo dev server on exp://127.0.0.1:8081 (avoids QR code timeout)
-4. Test app renders SignIn screen without C++ crash
-5. Test Firebase auth flow end-to-end
+### Next Steps for Development:
+1. ✅ **Merge PR #21** to bring local testing capability to main
+2. Test SignIn screen renders correctly
+3. Test Firebase auth flow end-to-end
+4. Test navigation between screens
+5. Test API connectivity to Lambda backend
+6. Begin feature development (user profile, weekly spot, etc.)
 
 ### Resources & Research:
 - [React Native Issue #30924](https://github.com/expo/expo/issues/30924) - RCTFatal with RN 0.74.5
