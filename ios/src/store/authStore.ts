@@ -6,6 +6,9 @@ import {
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
 } from 'firebase/auth';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
@@ -25,6 +28,8 @@ interface AuthStore {
   isLoading: boolean;
   error: string | null;
   initializeAuth: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithApple: () => Promise<void>;
   signInWithGoogle: (idToken: string, accessToken: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -69,6 +74,58 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         error: error.message,
         isInitializing: false,
       });
+    }
+  },
+
+  signUpWithEmail: async (email: string, password: string, displayName: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const auth = getAuth();
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      if (displayName) {
+        await updateProfile(userCredential.user, { displayName });
+      }
+
+      set({
+        user: {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          displayName: userCredential.user.displayName,
+          photoURL: userCredential.user.photoURL,
+        },
+        isLoading: false,
+      });
+    } catch (error: any) {
+      set({
+        error: error.message || 'Failed to sign up',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  signInWithEmail: async (email: string, password: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const auth = getAuth();
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      set({
+        user: {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          displayName: userCredential.user.displayName,
+          photoURL: userCredential.user.photoURL,
+        },
+        isLoading: false,
+      });
+    } catch (error: any) {
+      set({
+        error: error.message || 'Failed to sign in',
+        isLoading: false,
+      });
+      throw error;
     }
   },
 
