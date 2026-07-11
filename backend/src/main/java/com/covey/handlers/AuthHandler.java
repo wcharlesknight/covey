@@ -22,18 +22,32 @@ public class AuthHandler implements RequestHandler<Map<String, Object>, Map<Stri
   public Map<String, Object> handleRequest(Map<String, Object> event, Context context) {
     context.getLogger().log("Auth request received");
 
-    String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
-    Optional<String> uid = authMiddleware.validateToken(authHeader);
+    try {
+      String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
+      Optional<String> uid = authMiddleware.validateToken(authHeader);
 
-    if (uid.isPresent()) {
-      context.getLogger().log("Token validated for user: " + uid.get());
+      if (uid.isPresent()) {
+        context.getLogger().log("Token validated for user: " + uid.get());
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("statusCode", 200);
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("principalId", uid.get());
+        body.put("status", "valid");
+        response.put("body", new com.google.gson.Gson().toJson(body));
+        return response;
+      } else {
+        context.getLogger().log("Token validation failed");
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("statusCode", 401);
+        response.put("body", "{\"error\": \"Unauthorized\"}");
+        return response;
+      }
+    } catch (Exception e) {
+      context.getLogger().log("Error: " + e.getMessage());
       Map<String, Object> response = new java.util.HashMap<>();
-      response.put("principalId", uid.get());
-      response.put("status", "valid");
+      response.put("statusCode", 500);
+      response.put("body", "{\"error\": \"Internal server error\"}");
       return response;
-    } else {
-      context.getLogger().log("Token validation failed");
-      throw new RuntimeException("Unauthorized");
     }
   }
 }
