@@ -9,6 +9,7 @@ import com.covey.models.User;
 import com.covey.models.WeeklySpot;
 import com.covey.services.FeedService;
 import com.covey.services.UserService;
+import com.covey.util.ApiGatewayUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -37,7 +38,7 @@ public class UserFeedHandler implements RequestHandler<Map<String, Object>, Map<
     context.getLogger().log("GET /me/feed request");
 
     try {
-      String authHeader = (String) event.getOrDefault("authorizationToken", "");
+      String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
       Optional<String> uid = authMiddleware.validateToken(authHeader);
 
       if (!uid.isPresent()) {

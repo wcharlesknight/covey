@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.covey.config.FirebaseConfig;
 import com.covey.middleware.AuthMiddleware;
+import com.covey.util.ApiGatewayUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.JsonObject;
 import java.util.Map;
@@ -21,7 +22,7 @@ public class AuthHandler implements RequestHandler<Map<String, Object>, Map<Stri
   public Map<String, Object> handleRequest(Map<String, Object> event, Context context) {
     context.getLogger().log("Auth request received");
 
-    String authHeader = (String) event.getOrDefault("authorizationToken", "");
+    String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
     Optional<String> uid = authMiddleware.validateToken(authHeader);
 
     if (uid.isPresent()) {
