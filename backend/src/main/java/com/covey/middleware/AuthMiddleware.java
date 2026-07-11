@@ -14,6 +14,7 @@ public class AuthMiddleware {
 
   public Optional<String> validateToken(String bearerToken) {
     if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+      System.err.println("❌ Invalid bearer token format");
       return Optional.empty();
     }
 
@@ -22,8 +23,13 @@ public class AuthMiddleware {
     try {
       FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
       String uid = decodedToken.getUid();
+      System.out.println("✅ Token verified for user: " + uid);
       return Optional.of(uid);
+    } catch (FirebaseAuthException e) {
+      System.err.println("❌ Firebase auth error: " + e.getMessage());
+      return Optional.empty();
     } catch (Exception e) {
+      System.err.println("❌ Token verification failed: " + e.getMessage());
       return Optional.empty();
     }
   }
