@@ -10,11 +10,12 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
 import { initializeApiClient } from '../services/api';
+import { getFirestoreInstance } from '../services/firebase';
 
 interface User {
   uid: string;
@@ -40,19 +41,31 @@ interface AuthStore {
 const ensureUserRecord = async (firebaseUser: any) => {
   if (!firebaseUser) return;
 
-  const db = getFirestore();
-  const userRef = doc(db, 'users', firebaseUser.uid);
-  const userSnap = await getDoc(userRef);
+  try {
+    const db = getFirestoreInstance();
+    if (!db) {
+      console.warn('Firestore not initialized yet, skipping user record creation');
+      return;
+    }
 
-  if (!userSnap.exists()) {
-    await setDoc(userRef, {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email,
-      displayName: firebaseUser.displayName || '',
-      photoURL: firebaseUser.photoURL || '',
-      city: '', // User will set this in profile setup
-      createdAt: new Date().toISOString(),
-    });
+    const userRef = doc(db, 'users', firebaseUser.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName || '',
+        photoURL: firebaseUser.photoURL || '',
+        city: '',
+        createdAt: new Date().toISOString(),
+      });
+      console.log('✅ Created user record in Firestore:', firebaseUser.uid);
+    } else {
+      console.log('✅ User record already exists:', firebaseUser.uid);
+    }
+  } catch (error) {
+    console.error('Failed to create user record:', error);
   }
 };
 
