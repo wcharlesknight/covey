@@ -3,7 +3,6 @@ plugins {
     id 'checkstyle'
     id 'jacoco'
     id 'org.owasp.dependencycheck' version '8.4.2'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.covey'
@@ -35,7 +34,7 @@ dependencies {
     // AWS Secrets Manager (for loading Firebase credentials)
     implementation 'software.amazon.awssdk:secretsmanager:2.24.0'
 
-    // gRPC dependencies - use shaded version for serverless environments
+    // gRPC dependencies - use shaded netty for Lambda to prevent runtime classpath conflicts
     implementation 'io.grpc:grpc-netty-shaded:1.55.1'
     implementation 'io.grpc:grpc-protobuf:1.55.1'
     implementation 'io.grpc:grpc-services:1.55.1'
@@ -104,18 +103,69 @@ jacocoTestReport {
     }
 }
 
-shadowJar {
+task mergeServiceFiles {
+    outputs.dir("${buildDir}/merged-services")
+
+    doLast {
+        def servicesDir = file("${buildDir}/merged-services/META-INF/services")
+        servicesDir.deleteDir()
+        servicesDir.mkdirs()
+
+        configurations.runtimeClasspath.each { f ->
+            if (f.name.endsWith('.jar')) {
+                try {
+                    def zip = new java.util.zip.ZipFile(f)
+                    zip.entries().each { entry ->
+                        if (entry.name.startsWith('META-INF/services/') && !entry.isDirectory()) {
+                            def serviceName = entry.name - 'META-INF/services/'
+                            def serviceFile = new File(servicesDir, serviceName)
+                            def content = zip.getInputStream(entry).text
+
+                            if (serviceFile.exists()) {
+                                serviceFile.append('\n' + content)
+                            } else {
+                                serviceFile.text = content
+                            }
+                        }
+                    }
+                    zip.close()
+                } catch (Exception e) {
+                    println "Warning: Could not process JAR ${f.name}: ${e.message}"
+                }
+            }
+        }
+    }
+}
+
+task fatJar(type: Jar) {
+    dependsOn mergeServiceFiles
     archiveFileName = 'covey-lambda.jar'
-    mergeServiceFiles()
-    append 'META-INF/spring.handlers'
-    append 'META-INF/spring.schemas'
+
+    from sourceSets.main.output
+
+    from {
+        configurations.runtimeClasspath.collect { file ->
+            file.isDirectory() ? file : zipTree(file)
+        }
+    } {
+        exclude 'META-INF/services/**'
+    }
+
+    from mergeServiceFiles.outputs
+
+    manifest {
+        attributes 'Main-Class': 'com.covey.App'
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
 task createLambdaZip(type: Zip) {
+    dependsOn fatJar
     archiveFileName = 'covey-lambda.zip'
     destinationDirectory = file('build/distributions')
 
-    from zipTree(shadowJar.archiveFile)
+    from zipTree(fatJar.archiveFile)
     from(file('bootstrap')) {
         into '/'
     }
@@ -124,8 +174,6 @@ task createLambdaZip(type: Zip) {
         file('build/distributions').mkdirs()
     }
 }
-
-createLambdaZip.dependsOn shadowJar
 
 task smokeTest(type: Test) {
     useJUnit()
