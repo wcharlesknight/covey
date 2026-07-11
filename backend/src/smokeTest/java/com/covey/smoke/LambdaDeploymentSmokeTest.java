@@ -23,10 +23,13 @@ public class LambdaDeploymentSmokeTest {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
     Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
 
+    Map<String, Object> headers = new HashMap<>();
+    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
+
     Map<String, Object> payload = new HashMap<>();
     payload.put("path", "/auth");
     payload.put("httpMethod", "POST");
-    payload.put("authorizationToken", "Bearer " + FIREBASE_TOKEN);
+    payload.put("headers", headers);
 
     Response response = invokeLambda(payload);
     assertEquals("Lambda should respond to auth request", 200, response.code());
@@ -58,10 +61,13 @@ public class LambdaDeploymentSmokeTest {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
     Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
 
+    Map<String, Object> headers = new HashMap<>();
+    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
+
     Map<String, Object> payload = new HashMap<>();
     payload.put("path", "/me");
     payload.put("httpMethod", "GET");
-    payload.put("authorizationToken", "Bearer " + FIREBASE_TOKEN);
+    payload.put("headers", headers);
 
     Response response = invokeLambda(payload);
     assertEquals("User endpoint should be routable", 200, response.code());
@@ -72,10 +78,13 @@ public class LambdaDeploymentSmokeTest {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
     Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
 
+    Map<String, Object> headers = new HashMap<>();
+    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
+
     Map<String, Object> payload = new HashMap<>();
     payload.put("path", "/invites/test-id/rsvp");
     payload.put("httpMethod", "POST");
-    payload.put("authorizationToken", "Bearer " + FIREBASE_TOKEN);
+    payload.put("headers", headers);
 
     Response response = invokeLambda(payload);
     assertEquals("RSVP endpoint should be routable", 200, response.code());
