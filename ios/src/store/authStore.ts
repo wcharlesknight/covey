@@ -10,6 +10,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
@@ -35,6 +36,25 @@ interface AuthStore {
   signOut: () => Promise<void>;
   clearError: () => void;
 }
+
+const ensureUserRecord = async (firebaseUser: any) => {
+  if (!firebaseUser) return;
+
+  const db = getFirestore();
+  const userRef = doc(db, 'users', firebaseUser.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    await setDoc(userRef, {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      displayName: firebaseUser.displayName || '',
+      photoURL: firebaseUser.photoURL || '',
+      city: '', // User will set this in profile setup
+      createdAt: new Date().toISOString(),
+    });
+  }
+};
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
@@ -87,6 +107,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         await updateProfile(userCredential.user, { displayName });
       }
 
+      await ensureUserRecord(userCredential.user);
+
       set({
         user: {
           uid: userCredential.user.uid,
@@ -110,6 +132,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const auth = getAuth();
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      await ensureUserRecord(userCredential.user);
 
       set({
         user: {
@@ -148,6 +172,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       const userCredential = await signInWithCredential(auth, authCredential);
 
+      await ensureUserRecord(userCredential.user);
+
       set({
         user: {
           uid: userCredential.user.uid,
@@ -174,6 +200,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const credential = GoogleAuthProvider.credential(idToken, accessToken);
 
       const userCredential = await signInWithCredential(auth, credential);
+
+      await ensureUserRecord(userCredential.user);
 
       set({
         user: {
