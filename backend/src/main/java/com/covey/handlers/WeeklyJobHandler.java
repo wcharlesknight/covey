@@ -16,11 +16,10 @@ public class WeeklyJobHandler implements RequestHandler<Map<String, Object>, Map
 
   public WeeklyJobHandler() throws Exception {
     String apiKey = System.getenv("GOOGLE_PLACES_API_KEY");
-    if (apiKey == null || apiKey.isEmpty()) {
-      throw new IllegalArgumentException("GOOGLE_PLACES_API_KEY environment variable not set");
-    }
+    GooglePlacesClient placesClient = apiKey != null && !apiKey.isEmpty()
+      ? new GooglePlacesClient(apiKey)
+      : null;
 
-    GooglePlacesClient placesClient = new GooglePlacesClient(apiKey);
     this.weeklyJobService = new WeeklyJobService(placesClient);
     this.gson = new Gson();
 
