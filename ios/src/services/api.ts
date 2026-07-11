@@ -17,10 +17,16 @@ export const initializeApiClient = async () => {
   // Add auth token interceptor
   apiClient.interceptors.request.use(
     async (config) => {
-      const auth = getAuthInstance();
-      if (auth?.currentUser) {
-        const token = await auth.currentUser.getIdToken();
-        config.headers.Authorization = `Bearer ${token}`;
+      try {
+        const auth = getAuthInstance();
+        if (auth && auth.currentUser) {
+          const token = await auth.currentUser.getIdToken(true);
+          config.headers.Authorization = `Bearer ${token}`;
+        } else {
+          console.warn('No auth user available for request');
+        }
+      } catch (error) {
+        console.error('Failed to get auth token:', error);
       }
       return config;
     },
