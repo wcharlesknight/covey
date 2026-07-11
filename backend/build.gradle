@@ -107,7 +107,8 @@ task fatJar(type: Jar) {
     manifest {
         attributes 'Main-Class': 'com.covey.App'
     }
-    duplicatesStrategy = DuplicatesStrategy.WARN
+    // INCLUDE keeps all service loader files (last one wins, but all are present)
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 task createLambdaZip(type: Zip) {
