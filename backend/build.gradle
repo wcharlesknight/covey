@@ -37,8 +37,8 @@ dependencies {
     // gRPC dependencies with all transport implementations
     implementation 'io.grpc:grpc-netty:1.55.1'
     implementation 'io.grpc:grpc-protobuf:1.55.1'
-    // Load balancer policies
-    runtimeOnly 'io.grpc:grpc-services:1.55.1'
+    // Load balancer policies (must be included in Lambda package)
+    implementation 'io.grpc:grpc-services:1.55.1'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'
