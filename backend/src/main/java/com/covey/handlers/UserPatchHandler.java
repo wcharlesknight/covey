@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.covey.config.FirebaseConfig;
 import com.covey.middleware.AuthMiddleware;
 import com.covey.models.User;
+import com.covey.util.ApiGatewayUtil;
 import com.covey.services.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.Gson;
@@ -30,7 +31,7 @@ public class UserPatchHandler implements RequestHandler<Map<String, Object>, Map
     context.getLogger().log("PATCH /me request");
 
     try {
-      String authHeader = (String) event.getOrDefault("authorizationToken", "");
+      String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
       Optional<String> uid = authMiddleware.validateToken(authHeader);
 
       if (!uid.isPresent()) {

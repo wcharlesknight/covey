@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.covey.config.FirebaseConfig;
 import com.covey.middleware.AuthMiddleware;
 import com.covey.services.PushTokenService;
+import com.covey.util.ApiGatewayUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -29,7 +30,7 @@ public class PushTokenHandler implements RequestHandler<Map<String, Object>, Map
     context.getLogger().log("POST /push-tokens request");
 
     try {
-      String authHeader = (String) event.getOrDefault("authorizationToken", "");
+      String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
       Optional<String> uid = authMiddleware.validateToken(authHeader);
 
       if (!uid.isPresent()) {

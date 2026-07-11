@@ -46,13 +46,7 @@ jobs:
           TIMESTAMP=$(date +%s)
           S3_KEY="covey-lambda-${TIMESTAMP}.zip"
 
-          # Create bucket if it doesn't exist
-          aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null || \
-            aws s3api create-bucket --bucket "$BUCKET" \
-              --region ${{ env.AWS_REGION }} \
-              --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
-
-          # Upload to S3
+          # Upload to S3 (bucket must exist and be created manually beforehand)
           aws s3 cp backend/build/distributions/covey-lambda.zip "s3://$BUCKET/$S3_KEY"
 
           echo "LAMBDA_S3_BUCKET=$BUCKET" >> $GITHUB_ENV

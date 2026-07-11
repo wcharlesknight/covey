@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { getAuth } from 'firebase/auth';
 import { apiClient_methods } from '../services/api';
 
 interface WeeklySpot {
@@ -40,9 +41,20 @@ const HomeScreen = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Ensure auth is ready
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        console.warn('⚠️  Auth not ready yet, waiting...');
+        // Give auth state listener time to fire
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      console.log('🔐 Current user:', auth.currentUser?.uid, auth.currentUser?.email);
       const response = await apiClient_methods.getFeed();
       setFeed(response.data);
     } catch (err: any) {
+      console.error('❌ Feed error:', err);
       setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);

@@ -17,6 +17,13 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
       String path = (String) event.getOrDefault("path", "");
       String method = (String) event.getOrDefault("httpMethod", "GET");
 
+      // Strip stage prefix from path (e.g., /dev/me/feed -> /me/feed)
+      if (path.startsWith("/dev/")) {
+        path = path.substring(4);
+      } else if (path.startsWith("/prod/")) {
+        path = path.substring(5);
+      }
+
       context.getLogger().log("Path: " + path + ", Method: " + method);
 
       // Route to appropriate handler based on path

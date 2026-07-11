@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.covey.config.FirebaseConfig;
 import com.covey.middleware.AuthMiddleware;
 import com.covey.models.Invite;
+import com.covey.util.ApiGatewayUtil;
 import com.covey.models.Invite.Status;
 import com.covey.services.RsvpService;
 import com.google.firebase.auth.FirebaseAuth;
@@ -31,7 +32,7 @@ public class RsvpHandler implements RequestHandler<Map<String, Object>, Map<Stri
     context.getLogger().log("POST /invites/{id}/rsvp request");
 
     try {
-      String authHeader = (String) event.getOrDefault("authorizationToken", "");
+      String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
       Optional<String> uid = authMiddleware.validateToken(authHeader);
 
       if (!uid.isPresent()) {
