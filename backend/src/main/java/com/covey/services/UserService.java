@@ -28,7 +28,7 @@ public class UserService {
   public void saveUser(User user) throws ExecutionException, InterruptedException {
     Firestore db = FirestoreClient.getFirestore();
     DocumentReference docRef = db.collection(USERS_COLLECTION).document(user.getUid());
-    user.setUpdatedAt(System.currentTimeMillis());
+    user.setUpdatedAt(new java.util.Date().toInstant().toString());
     docRef.set(user).get();
   }
 

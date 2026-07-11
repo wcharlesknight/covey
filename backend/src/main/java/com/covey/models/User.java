@@ -4,9 +4,10 @@ public class User {
   private String uid;
   private String email;
   private String displayName;
+  private String photoURL;
   private String city;
-  private long createdAt;
-  private long updatedAt;
+  private String createdAt;
+  private String updatedAt;
 
   public User() {}
 
@@ -15,8 +16,8 @@ public class User {
     this.email = email;
     this.displayName = displayName;
     this.city = city;
-    this.createdAt = System.currentTimeMillis();
-    this.updatedAt = System.currentTimeMillis();
+    this.createdAt = new java.util.Date().toInstant().toString();
+    this.updatedAt = new java.util.Date().toInstant().toString();
   }
 
   public String getUid() {
@@ -33,7 +34,7 @@ public class User {
 
   public void setEmail(String email) {
     this.email = email;
-    this.updatedAt = System.currentTimeMillis();
+    this.updatedAt = new java.util.Date().toInstant().toString();
   }
 
   public String getDisplayName() {
@@ -42,7 +43,16 @@ public class User {
 
   public void setDisplayName(String displayName) {
     this.displayName = displayName;
-    this.updatedAt = System.currentTimeMillis();
+    this.updatedAt = new java.util.Date().toInstant().toString();
+  }
+
+  public String getPhotoURL() {
+    return photoURL;
+  }
+
+  public void setPhotoURL(String photoURL) {
+    this.photoURL = photoURL;
+    this.updatedAt = new java.util.Date().toInstant().toString();
   }
 
   public String getCity() {
@@ -51,18 +61,22 @@ public class User {
 
   public void setCity(String city) {
     this.city = city;
-    this.updatedAt = System.currentTimeMillis();
+    this.updatedAt = new java.util.Date().toInstant().toString();
   }
 
-  public long getCreatedAt() {
+  public String getCreatedAt() {
     return createdAt;
   }
 
-  public long getUpdatedAt() {
+  public void setCreatedAt(String createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public String getUpdatedAt() {
     return updatedAt;
   }
 
-  public void setUpdatedAt(long updatedAt) {
+  public void setUpdatedAt(String updatedAt) {
     this.updatedAt = updatedAt;
   }
 }
