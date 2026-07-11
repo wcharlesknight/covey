@@ -3,6 +3,7 @@ plugins {
     id 'checkstyle'
     id 'jacoco'
     id 'org.owasp.dependencycheck' version '8.4.2'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.covey'
@@ -34,10 +35,9 @@ dependencies {
     // AWS Secrets Manager (for loading Firebase credentials)
     implementation 'software.amazon.awssdk:secretsmanager:2.24.0'
 
-    // gRPC dependencies with all transport implementations
-    implementation 'io.grpc:grpc-netty:1.55.1'
+    // gRPC dependencies - use shaded version for serverless environments
+    implementation 'io.grpc:grpc-netty-shaded:1.55.1'
     implementation 'io.grpc:grpc-protobuf:1.55.1'
-    // Load balancer policies (must be included in Lambda package)
     implementation 'io.grpc:grpc-services:1.55.1'
 
     // Testing
@@ -104,23 +104,18 @@ jacocoTestReport {
     }
 }
 
-task fatJar(type: Jar) {
+shadowJar {
     archiveFileName = 'covey-lambda.jar'
-    from sourceSets.main.output
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-    manifest {
-        attributes 'Main-Class': 'com.covey.App'
-    }
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
+    append 'META-INF/spring.handlers'
+    append 'META-INF/spring.schemas'
 }
 
 task createLambdaZip(type: Zip) {
     archiveFileName = 'covey-lambda.zip'
     destinationDirectory = file('build/distributions')
 
-    from zipTree(file('build/libs/covey-lambda.jar'))
+    from zipTree(shadowJar.archiveFile)
     from(file('bootstrap')) {
         into '/'
     }
@@ -130,7 +125,7 @@ task createLambdaZip(type: Zip) {
     }
 }
 
-createLambdaZip.dependsOn fatJar
+createLambdaZip.dependsOn shadowJar
 
 task smokeTest(type: Test) {
     useJUnit()
