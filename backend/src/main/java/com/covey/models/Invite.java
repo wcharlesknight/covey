@@ -7,7 +7,8 @@ public class Invite {
 
   private String id;
   private String userId;
-  private String weeklySpotId;
+  private String weekId;
+  private String venueId;
   private String city;
   private Status status;
   private long createdAt;
@@ -15,13 +16,28 @@ public class Invite {
 
   public Invite() {}
 
-  public Invite(String userId, String weeklySpotId, String city) {
+  public Invite(String userId, String weekId, String venueId, String city) {
     this.userId = userId;
-    this.weeklySpotId = weeklySpotId;
+    this.weekId = weekId;
+    this.venueId = venueId;
     this.city = city;
     this.status = Status.INVITED;
     this.createdAt = System.currentTimeMillis();
     this.updatedAt = System.currentTimeMillis();
+  }
+
+  // Backward-compatible constructor for existing code (weeklySpotId → weekId)
+  public Invite(String userId, String weeklySpotId, String city) {
+    this.userId = userId;
+    this.weekId = weeklySpotId;
+    this.city = city;
+    this.status = Status.INVITED;
+    this.createdAt = System.currentTimeMillis();
+    this.updatedAt = System.currentTimeMillis();
+  }
+
+  public static String generateId(String userId, String weekId) {
+    return userId + "_" + weekId;
   }
 
   public String getId() {
@@ -36,8 +52,12 @@ public class Invite {
     return userId;
   }
 
-  public String getWeeklySpotId() {
-    return weeklySpotId;
+  public String getWeekId() {
+    return weekId;
+  }
+
+  public String getVenueId() {
+    return venueId;
   }
 
   public String getCity() {
@@ -59,5 +79,10 @@ public class Invite {
 
   public long getUpdatedAt() {
     return updatedAt;
+  }
+
+  // Backward-compatible getter for existing code
+  public String getWeeklySpotId() {
+    return weekId;
   }
 }

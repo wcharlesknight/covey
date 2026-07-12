@@ -77,6 +77,8 @@ its own list without a collection-group scan.
   - name: string              // "London"
   - isActive: boolean         // hide inactive cities from the picker
   - timezone: string          // IANA tz, e.g. "Europe/London"
+  - lat: number               // City centre latitude (WBS 1.3.6: Google Places search)
+  - lng: number               // City centre longitude (WBS 1.3.6: Google Places search)
 ```
 
 ---
