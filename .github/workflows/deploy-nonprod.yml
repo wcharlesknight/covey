@@ -98,12 +98,13 @@ jobs:
           # Get classpath for running the token generator
           CLASSPATH=$(gradle -q printClasspath)
 
-          # Generate test token using the utility
+          # Generate an ID token (custom token exchanged via Firebase REST API)
           TOKEN=$(java -cp "$CLASSPATH:build/classes/java/smokeTest:build/classes/java/main" \
             com.covey.smoke.FirebaseTestTokenGenerator smoke-test-user)
           echo "FIREBASE_TOKEN=$TOKEN" >> $GITHUB_OUTPUT
         env:
           FIREBASE_CREDENTIALS_SECRET: covey/firebase-admin-dev
+          FIREBASE_WEB_API_KEY: ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
 
       - name: Run smoke tests against nonprod API Gateway
         run: |
