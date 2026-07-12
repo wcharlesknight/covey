@@ -1,0 +1,125 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/deploy-infrastructure.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: us-west-2
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    name: Deploy Infrastructure
+    environment: nonprod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate EventBridge CloudFormation template
+        run: |
+          echo "Validating EventBridge infrastructure template..."
+          aws cloudformation validate-template \
+            --template-body file://infrastructure/eventbridge-weekly-job.yaml \
+            --region ${{ env.AWS_REGION }}
+          echo "✅ Template is valid"
+
+      - name: Deploy EventBridge infrastructure (CloudFormation)
+        run: |
+          # Get Lambda function ARNs
+          echo "Fetching Lambda function ARNs..."
+          WEEKLY_JOB_ARN=$(aws lambda get-function \
+            --function-name covey-weekly-spot-dev \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Configuration.FunctionArn' \
+            --output text)
+
+          NOTIFICATION_ARN=$(aws lambda get-function \
+            --function-name covey-notification-delivery-dev \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Configuration.FunctionArn' \
+            --output text 2>/dev/null || echo "arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:covey-notification-delivery-dev")
+
+          echo "Weekly Job Lambda ARN: $WEEKLY_JOB_ARN"
+          echo "Notification Lambda ARN: $NOTIFICATION_ARN"
+
+          # Deploy stack
+          echo "Deploying EventBridge infrastructure stack..."
+          aws cloudformation deploy \
+            --template-file infrastructure/eventbridge-weekly-job.yaml \
+            --stack-name covey-weekly-job-dev \
+            --parameter-overrides \
+              Environment=dev \
+              LambdaFunctionArn=$WEEKLY_JOB_ARN \
+              NotificationLambdaFunctionArn=$NOTIFICATION_ARN \
+            --region ${{ env.AWS_REGION }} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset
+
+          echo "✅ EventBridge infrastructure deployed successfully"
+
+      - name: Verify EventBridge rules
+        run: |
+          echo "Verifying EventBridge rules..."
+
+          echo "Selection rule (Thursday 9 PM EST):"
+          aws events describe-rule \
+            --name covey-weekly-selection-dev \
+            --region ${{ env.AWS_REGION }} \
+            --query 'State,ScheduleExpression' \
+            --output text
+
+          echo "Delivery rule (Friday 9 AM EST):"
+          aws events describe-rule \
+            --name covey-notification-delivery-dev \
+            --region ${{ env.AWS_REGION }} \
+            --query 'State,ScheduleExpression' \
+            --output text
+
+          echo "✅ EventBridge rules verified"
+
+      - name: Get CloudWatch dashboard URL
+        run: |
+          DASHBOARD_URL=$(aws cloudformation describe-stacks \
+            --stack-name covey-weekly-job-dev \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`DashboardURL`].OutputValue' \
+            --output text)
+
+          echo "📊 CloudWatch Dashboard: $DASHBOARD_URL"
+          echo "DASHBOARD_URL=$DASHBOARD_URL" >> $GITHUB_STEP_SUMMARY
+
+      - name: Log deployment summary
+        run: |
+          echo "## Infrastructure Deployment Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### EventBridge Rules" >> $GITHUB_STEP_SUMMARY
+          echo "- Selection job: Thursday 21:00 UTC (9 PM EST)" >> $GITHUB_STEP_SUMMARY
+          echo "- Delivery job: Friday 09:00 UTC (9 AM EST)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### CloudWatch" >> $GITHUB_STEP_SUMMARY
+          echo "- Log groups: 30-day retention" >> $GITHUB_STEP_SUMMARY
+          echo "- Alarms: Errors and throttles monitored" >> $GITHUB_STEP_SUMMARY
+          echo "- Dashboard: Available in AWS Console" >> $GITHUB_STEP_SUMMARY
