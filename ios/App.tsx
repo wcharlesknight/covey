@@ -10,6 +10,7 @@ import { useAuthStore } from './src/store/authStore';
 import { initializeFirebase } from './src/services/firebase';
 
 import SignInScreen from './src/screens/SignInScreen';
+import CityPickerScreen from './src/screens/CityPickerScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
@@ -21,6 +22,12 @@ SplashScreen.preventAutoHideAsync();
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="SignIn" component={SignInScreen} />
+  </Stack.Navigator>
+);
+
+const OnboardingStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="CityPicker" component={CityPickerScreen} />
   </Stack.Navigator>
 );
 
@@ -75,10 +82,18 @@ export default function App() {
     return null; // Splash screen still visible
   }
 
+  const hasCity = user?.city && user.city.length > 0;
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        {user ? <AppStack /> : <AuthStack />}
+        {!user ? (
+          <AuthStack />
+        ) : !hasCity ? (
+          <OnboardingStack />
+        ) : (
+          <AppStack />
+        )}
       </NavigationContainer>
       <StatusBar />
     </SafeAreaProvider>
