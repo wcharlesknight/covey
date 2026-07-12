@@ -80,6 +80,14 @@ public class GooglePlacesClient {
     if (venues == null || venues.isEmpty()) {
       return null;
     }
+    // Sort by rating DESC, then review count DESC
+    venues.sort((a, b) -> {
+      int ratingCompare = Double.compare(b.getRating(), a.getRating());
+      if (ratingCompare != 0) {
+        return ratingCompare;
+      }
+      return Integer.compare(b.getReviewCount(), a.getReviewCount());
+    });
     return venues.get(0);
   }
 
