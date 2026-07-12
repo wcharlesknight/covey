@@ -3,6 +3,7 @@ package com.covey.models;
 public class WeeklySpot {
   private String id;
   private String city;
+  private String weekId;
   private String venueName;
   private String venueAddress;
   private String venueId;
@@ -10,9 +11,24 @@ public class WeeklySpot {
   private int reviewCount;
   private long weekStartDate;
   private long createdAt;
+  private long pushSentAt;
 
   public WeeklySpot() {}
 
+  public WeeklySpot(String city, String weekId, String venueName, String venueAddress, String venueId,
+      double rating, int reviewCount, long weekStartDate) {
+    this.city = city;
+    this.weekId = weekId;
+    this.venueName = venueName;
+    this.venueAddress = venueAddress;
+    this.venueId = venueId;
+    this.rating = rating;
+    this.reviewCount = reviewCount;
+    this.weekStartDate = weekStartDate;
+    this.createdAt = System.currentTimeMillis();
+  }
+
+  // Backward-compatible constructor for existing code
   public WeeklySpot(String city, String venueName, String venueAddress, String venueId,
       double rating, int reviewCount, long weekStartDate) {
     this.city = city;
@@ -25,6 +41,10 @@ public class WeeklySpot {
     this.createdAt = System.currentTimeMillis();
   }
 
+  public static String generateId(String city, String weekId) {
+    return city + "_" + weekId;
+  }
+
   public String getId() {
     return id;
   }
@@ -35,6 +55,10 @@ public class WeeklySpot {
 
   public String getCity() {
     return city;
+  }
+
+  public String getWeekId() {
+    return weekId;
   }
 
   public String getVenueName() {
@@ -63,5 +87,13 @@ public class WeeklySpot {
 
   public long getCreatedAt() {
     return createdAt;
+  }
+
+  public long getPushSentAt() {
+    return pushSentAt;
+  }
+
+  public void setPushSentAt(long timestamp) {
+    this.pushSentAt = timestamp;
   }
 }

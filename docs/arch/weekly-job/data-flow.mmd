@@ -1,0 +1,85 @@
+%% WBS 1.3.6 - Weekly Job Lambda: End-to-end data flow
+%% Trigger: Thursday night (EventBridge cron). Notifications delivered Friday 9am EST.
+%% Selection is decoupled from delivery via a scheduled notification queue.
+
+flowchart TD
+    %% ============ TRIGGER ============
+    CRON[["EventBridge Cron\nThursday ~21:00 EST"]] --> INVOKE[Invoke WeeklyJobHandler]
+    INVOKE --> IDEM{"Run already completed\nfor this weekStartDate?\n(weekly_job_runs doc)"}
+    IDEM -->|Yes, status=COMPLETED| SKIPRUN[["Log + exit 200\nno-op, idempotent"]]
+    IDEM -->|No / PARTIAL / missing| MARKSTART["Write weekly_job_runs\nstatus=RUNNING\nweekStartDate as doc id"]
+
+    MARKSTART --> LOADCITIES["Load target cities\nfrom cities collection"]
+    LOADCITIES --> CITYLOOP{"For each city\n(sequential)"}
+
+    %% ============ PER-CITY SELECTION ============
+    CITYLOOP --> CITYDONE{"Spot already exists\nfor city + weekStartDate?"}
+    CITYDONE -->|Yes| NEXTCITY
+    CITYDONE -->|No| PLACES["Query Google Places\nNearby Search\n(city coords, type=bar)"]
+
+    PLACES --> PLACESERR{"Places API\nsuccess?"}
+    PLACESERR -->|"Error / OVER_QUERY_LIMIT"| RETRYP{"Retry budget left?\n(exp backoff, max 3)"}
+    RETRYP -->|Yes| PLACES
+    RETRYP -->|No| CITYFAIL["Record city error\n(cityErrors += city)"]
+    CITYFAIL --> NEXTCITY
+
+    PLACESERR -->|OK / ZERO_RESULTS| CANDS["Build candidate list\nrating>=4.0, reviews>=50"]
+    CANDS --> EXCL["Filter against\nvenue_exclusion_list\n(used in last 12 weeks)"]
+    EXCL --> VALIDATE["Validate venue\n(open, has name/address,\nnot manually blocked)"]
+    VALIDATE --> AVAIL{"Any eligible\nvenue remaining?"}
+
+    AVAIL -->|"No (empty city)"| SKIPCITY["Skip city\nlog reason, DO NOT fail job\n(skippedCities += city)"]
+    SKIPCITY --> NEXTCITY
+
+    AVAIL -->|Yes| PICK["Select top venue\n(rank by rating/reviews)"]
+    PICK --> TXN[["Firestore transaction\nper city"]]
+
+    %% ============ PER-CITY WRITE (ATOMIC) ============
+    subgraph TXNBLOCK["Atomic write boundary (per city)"]
+        TXN --> WSPOT["Create WeeklySpot\ndoc id = city_weekStartDate\n(deterministic, idempotent)"]
+        WSPOT --> ADDEXCL["Append venue to\nvenue_exclusion_list\n(expiresAt = +12 weeks)"]
+        ADDEXCL --> USERS["Query users where\ncity == this city"]
+        USERS --> INVLOOP{"For each user"}
+        INVLOOP --> INVITE["Create Invite\ndoc id = weeklySpotId_userId\n(deterministic, idempotent)"]
+        INVITE --> INVLOOP
+        INVLOOP -->|done| ENQUEUE["Enqueue notification tasks\n(scheduled_notifications:\nFCM + Email per user)\ndeliverAt = Fri 9am EST"]
+    end
+
+    ENQUEUE --> TXNCOMMIT{"Transaction\ncommitted?"}
+    TXNCOMMIT -->|"Fail (contention/timeout)"| RETRYT{"Retry budget left?\n(max 3)"}
+    RETRYT -->|Yes| TXN
+    RETRYT -->|No| CITYFAIL
+    TXNCOMMIT -->|Yes| NEXTCITY[Next city]
+
+    NEXTCITY --> CITYLOOP
+    CITYLOOP -->|all cities processed| FINALIZE
+
+    %% ============ RUN FINALIZE ============
+    FINALIZE["Update weekly_job_runs\nstatus=COMPLETED or PARTIAL\nrecord skippedCities + cityErrors"] --> RESULT{"Any city errors?"}
+    RESULT -->|No| OK200[["Return 200\nlog summary"]]
+    RESULT -->|"Yes (partial)"| ALERT["Emit CloudWatch metric\n+ alarm (partial failure)"]
+    ALERT --> OK207[["Return 200\nwith partial summary\njob did not hard-fail"]]
+
+    %% ============ DELIVERY (Friday 9am) ============
+    DCRON[["EventBridge Cron\nFriday 09:00 EST"]] --> DHANDLER[Invoke NotificationDispatchHandler]
+    DHANDLER --> DQUERY["Query scheduled_notifications\nwhere deliverAt<=now\nAND status=PENDING"]
+    DQUERY --> DLOOP{"For each task\n(batched)"}
+
+    DLOOP --> CHANNEL{"Channel?"}
+    CHANNEL -->|FCM| TOKENS["Load active push tokens\nfor user"]
+    TOKENS --> FCM["FirebaseMessaging\nsendEachForMulticast"]
+    FCM --> FCMRES{"Per-token result"}
+    FCMRES -->|"UNREGISTERED / invalid"| DEACT["Mark push token inactive"]
+    FCMRES -->|Success| MARKSENT
+    DEACT --> MARKSENT
+
+    CHANNEL -->|Email| SES["AWS SES SendEmail\n(templated)"]
+    SES --> SESRES{"SES success?"}
+    SESRES -->|"Throttle / 5xx"| DRETRY{"Retry budget left?"}
+    DRETRY -->|Yes| SES
+    DRETRY -->|No| DLQ["Move task to DLQ\nstatus=FAILED"]
+    SESRES -->|Sent| MARKSENT["Update task\nstatus=SENT\n(idempotent, single-delivery)"]
+
+    MARKSENT --> DLOOP
+    DLQ --> DLOOP
+    DLOOP -->|done| DFINISH[["Log delivery summary\nReturn 200"]]
