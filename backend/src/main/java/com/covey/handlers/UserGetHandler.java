@@ -8,6 +8,7 @@ import com.covey.models.User;
 import com.covey.util.ApiGatewayUtil;
 import com.covey.services.UserService;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
 import com.google.gson.Gson;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,20 +32,33 @@ public class UserGetHandler implements RequestHandler<Map<String, Object>, Map<S
 
     try {
       String authHeader = ApiGatewayUtil.getAuthorizationHeader(event);
-      Optional<String> uid = authMiddleware.validateToken(authHeader);
+      Optional<FirebaseToken> token = authMiddleware.decodeToken(authHeader);
 
-      if (!uid.isPresent()) {
+      if (!token.isPresent()) {
         return error(401, "Unauthorized");
       }
 
-      Optional<User> user = userService.getUser(uid.get());
-      if (!user.isPresent()) {
-        return error(404, "User not found");
+      FirebaseToken decoded = token.get();
+      String uid = decoded.getUid();
+
+      Optional<User> existing = userService.getUser(uid);
+      if (existing.isPresent()) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("statusCode", 200);
+        response.put("body", gson.toJson(existing.get()));
+        return response;
       }
+
+      // Auto-provision on first sign-in (WBS 1.3.2.3)
+      String email = decoded.getEmail() != null ? decoded.getEmail() : "";
+      String displayName = decoded.getName() != null ? decoded.getName() : "";
+      User newUser = new User(uid, email, displayName, null);
+      userService.createUser(newUser);
+      context.getLogger().log("Auto-provisioned user: " + uid);
 
       Map<String, Object> response = new HashMap<>();
       response.put("statusCode", 200);
-      response.put("body", gson.toJson(user.get()));
+      response.put("body", gson.toJson(newUser));
       return response;
     } catch (Exception e) {
       context.getLogger().log("Error: " + e.getMessage());
