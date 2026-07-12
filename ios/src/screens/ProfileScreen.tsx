@@ -47,20 +47,21 @@ const ProfileScreen = () => {
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>City</Text>
-          <View style={styles.infoRowContent}>
-            <Text style={styles.value}>{user?.city || 'Not set'}</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('ChangeCity')}>
-              <Text style={styles.changeLink}>Change</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.infoRow}>
           <Text style={styles.label}>User ID</Text>
           <Text style={[styles.value, styles.monoFont]}>{user?.uid}</Text>
         </View>
       </View>
+
+      <TouchableOpacity
+        style={styles.settingsRow}
+        onPress={() => navigation.navigate('ChangeCity')}
+      >
+        <View>
+          <Text style={styles.settingsRowLabel}>City</Text>
+          <Text style={styles.settingsRowValue}>{user?.city || 'Not set'}</Text>
+        </View>
+        <Text style={styles.settingsRowChevron}>›</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} disabled={isLoading}>
         {isLoading ? (
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
     borderRadius: 12,
     padding: 20,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
@@ -99,16 +100,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-  },
-  infoRowContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  changeLink: {
-    fontSize: 14,
-    color: '#6B4CE6',
-    fontWeight: '600',
   },
   label: {
     fontSize: 12,
@@ -124,6 +115,31 @@ const styles = StyleSheet.create({
   monoFont: {
     fontFamily: 'Courier New',
     fontSize: 12,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  settingsRowLabel: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  settingsRowValue: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  settingsRowChevron: {
+    fontSize: 24,
+    color: '#9CA3AF',
   },
   signOutButton: {
     backgroundColor: '#EF4444',
