@@ -26,12 +26,18 @@ public class WeeklyJobRun {
   private String weekId;
   private long startedAt;
   private long completedAt;
+  private String status;
   private int citiesProcessed;
   private int citiesSkipped;
+  private int citiesErrored;
   private int totalInvites;
   private int totalPushes;
   private int totalEmails;
   private List<CityResult> cityResults;
+
+  public WeeklyJobRun() {
+    this.cityResults = new ArrayList<>();
+  }
 
   public WeeklyJobRun(String jobId, String weekId) {
     this.id = jobId;
@@ -44,16 +50,40 @@ public class WeeklyJobRun {
     return id;
   }
 
+  public void setId(String id) {
+    this.id = id;
+  }
+
   public String getWeekId() {
     return weekId;
+  }
+
+  public void setWeekId(String weekId) {
+    this.weekId = weekId;
   }
 
   public long getStartedAt() {
     return startedAt;
   }
 
+  public void setStartedAt(long startedAt) {
+    this.startedAt = startedAt;
+  }
+
   public long getCompletedAt() {
     return completedAt;
+  }
+
+  public void setCompletedAt(long completedAt) {
+    this.completedAt = completedAt;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
   }
 
   public void markCompleted() {
@@ -74,6 +104,14 @@ public class WeeklyJobRun {
 
   public void setCitiesSkipped(int count) {
     this.citiesSkipped = count;
+  }
+
+  public int getCitiesErrored() {
+    return citiesErrored;
+  }
+
+  public void setCitiesErrored(int count) {
+    this.citiesErrored = count;
   }
 
   public int getTotalInvites() {

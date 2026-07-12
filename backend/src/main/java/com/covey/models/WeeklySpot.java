@@ -61,6 +61,10 @@ public class WeeklySpot {
     return weekId;
   }
 
+  public void setWeekId(String weekId) {
+    this.weekId = weekId;
+  }
+
   public String getVenueName() {
     return venueName;
   }
