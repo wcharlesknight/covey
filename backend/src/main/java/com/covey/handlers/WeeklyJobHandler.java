@@ -48,7 +48,15 @@ public class WeeklyJobHandler implements RequestHandler<Map<String, Object>, Map
     }
 
     context.getLogger().log("Weekly job starting for authenticated user: " + userId.get());
+    return runJob(context);
+  }
 
+  public Map<String, Object> handleScheduledEvent(Context context) {
+    context.getLogger().log("Weekly selection job triggered by EventBridge");
+    return runJob(context);
+  }
+
+  private Map<String, Object> runJob(Context context) {
     try {
       weeklyJobService.executeWeeklyJob();
 
