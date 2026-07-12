@@ -129,24 +129,6 @@ Resources:
       SourceArn: !GetAtt NotificationDeliveryRule.Arn
 
   # ============================================
-  # CloudWatch Log Groups
-  # ============================================
-
-  WeeklyJobLogGroup:
-    Type: AWS::Logs::LogGroup
-    DeletionPolicy: Retain
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/covey-weekly-spot-${Environment}'
-      RetentionInDays: 30
-
-  NotificationDeliveryLogGroup:
-    Type: AWS::Logs::LogGroup
-    DeletionPolicy: Retain
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/covey-notification-delivery-${Environment}'
-      RetentionInDays: 30
-
-  # ============================================
   # CloudWatch Alarms
   # ============================================
 
@@ -290,18 +272,6 @@ Outputs:
     Value: !GetAtt NotificationDeliveryRule.Arn
     Export:
       Name: !Sub '${AWS::StackName}-DeliveryRuleArn'
-
-  WeeklyJobLogGroupName:
-    Description: CloudWatch log group for weekly job Lambda
-    Value: !Ref WeeklyJobLogGroup
-    Export:
-      Name: !Sub '${AWS::StackName}-WeeklyJobLogGroup'
-
-  NotificationDeliveryLogGroupName:
-    Description: CloudWatch log group for notification delivery Lambda
-    Value: !Ref NotificationDeliveryLogGroup
-    Export:
-      Name: !Sub '${AWS::StackName}-NotificationDeliveryLogGroup'
 
   DashboardURL:
     Description: CloudWatch Dashboard URL
