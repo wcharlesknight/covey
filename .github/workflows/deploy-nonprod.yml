@@ -81,6 +81,44 @@ jobs:
             --query 'Configuration.[FunctionName,Runtime,CodeSha256,LastModified]' \
             --output text
 
+      - name: Deploy EventBridge infrastructure (CloudFormation)
+        run: |
+          # Get Lambda function ARNs for the CloudFormation parameters
+          WEEKLY_JOB_ARN=$(aws lambda get-function \
+            --function-name covey-weekly-spot-dev \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Configuration.FunctionArn' \
+            --output text)
+
+          NOTIFICATION_ARN=$(aws lambda get-function \
+            --function-name covey-notification-delivery-dev \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Configuration.FunctionArn' \
+            --output text 2>/dev/null || echo "arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:covey-notification-delivery-dev")
+
+          echo "Deploying EventBridge infrastructure..."
+          echo "Weekly Job Lambda ARN: $WEEKLY_JOB_ARN"
+          echo "Notification Lambda ARN: $NOTIFICATION_ARN"
+
+          # Validate template
+          aws cloudformation validate-template \
+            --template-body file://infrastructure/eventbridge-weekly-job.yaml \
+            --region ${{ env.AWS_REGION }}
+
+          # Deploy stack
+          aws cloudformation deploy \
+            --template-file infrastructure/eventbridge-weekly-job.yaml \
+            --stack-name covey-weekly-job-dev \
+            --parameter-overrides \
+              Environment=dev \
+              LambdaFunctionArn=$WEEKLY_JOB_ARN \
+              NotificationLambdaFunctionArn=$NOTIFICATION_ARN \
+            --region ${{ env.AWS_REGION }} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset
+
+          echo "✅ EventBridge infrastructure deployed successfully"
+
       - name: Get API Gateway endpoint
         id: api_gateway
         run: |
