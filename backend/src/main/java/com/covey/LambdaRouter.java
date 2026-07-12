@@ -50,7 +50,7 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
           response.put("body", result.toString());
           return response;
         }
-      } else if (path.equals("/auth") && method.equals("POST")) {
+      } else if ((path.equals("/auth") || path.equals("/auth/refresh")) && method.equals("POST")) {
         return new AuthHandler().handleRequest(event, context);
       } else {
         // 404 Not Found
