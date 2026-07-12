@@ -19,10 +19,15 @@ const Tab = createBottomTabNavigator();
 
 SplashScreen.preventAutoHideAsync();
 
-const AuthStack = ({ userCity }: { userCity?: string }) => (
+const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="SignIn" component={SignInScreen} />
-    {!userCity && <Stack.Screen name="CityPicker" component={CityPickerScreen} />}
+  </Stack.Navigator>
+);
+
+const OnboardingStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="CityPicker" component={CityPickerScreen} />
   </Stack.Navigator>
 );
 
@@ -77,16 +82,17 @@ export default function App() {
     return null; // Splash screen still visible
   }
 
-  const userCity = user?.city ?? undefined;
-  const isUserOnboarded = user && userCity;
+  const hasCity = user?.city && user.city.length > 0;
 
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        {isUserOnboarded ? (
-          <AppStack />
+        {!user ? (
+          <AuthStack />
+        ) : !hasCity ? (
+          <OnboardingStack />
         ) : (
-          <AuthStack userCity={userCity} />
+          <AppStack />
         )}
       </NavigationContainer>
       <StatusBar />
