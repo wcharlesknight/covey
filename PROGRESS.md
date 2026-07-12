@@ -2,10 +2,18 @@
 
 ## 📍 Quick Status
 
-**Current WBS:** 1.3.6 - Weekly Job Lambda (Phase 1-2: Planning & TDD Scaffolds)  
-**Status:** ✅ PHASE 1-2 COMPLETE - PR #28 merged; ready for Phase 2 implementation  
-**Latest Branch:** `main` (PR #28 merged 2026-07-12)  
-**Latest Session:** 2026-07-12 - Completed design review; Phase 1 TDD foundation ready
+**Current WBS:** 1.3.9 - Smoke Test Local Test Runner (next up) or 1.4 iOS  
+**Status:** ✅ WBS 1.3.6–1.3.8 COMPLETE — weekly job implemented, EventBridge deployed to AWS  
+**Latest Branch:** `main` (PRs #28–#43 merged 2026-07-12)  
+**Latest Session:** 2026-07-12 - EventBridge + single Lambda architecture fully deployed to AWS dev
+
+### WBS 1.3.8 Complete (2026-07-12)
+- ✅ Lambda deployed: `covey-weekly-spot-dev` handles all HTTP API + scheduled jobs
+- ✅ EventBridge rules: `covey-weekly-selection-dev` (Thu 2AM UTC) + `covey-notification-delivery-dev` (Fri 2PM UTC)
+- ✅ Both rules route to single Lambda via `triggerType` input payload (`WEEKLY_SELECTION` / `NOTIFICATION_DELIVERY`)
+- ✅ `LambdaRouter` detects EventBridge events and dispatches without auth check
+- ✅ CloudWatch alarms and dashboard active (`covey-weekly-job-dev`)
+- ✅ CloudFormation stack `covey-weekly-job-dev` in CREATE_COMPLETE
 
 ---
 
