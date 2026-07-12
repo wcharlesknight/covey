@@ -2,10 +2,23 @@
 
 ## 📍 Quick Status
 
-**Current WBS:** 1.3.9 - Smoke Test Local Test Runner (next up) or 1.4 iOS  
-**Status:** ✅ WBS 1.3.6–1.3.8 COMPLETE — weekly job implemented, EventBridge deployed to AWS  
-**Latest Branch:** `main` (PRs #28–#43 merged 2026-07-12)  
-**Latest Session:** 2026-07-12 - EventBridge + single Lambda architecture fully deployed to AWS dev
+**Current WBS:** 1.4 iOS Implementation  
+**Status:** ✅ Backend COMPLETE — all APIs deployed, smoke tests passing, Postman environment set up  
+**Latest Branch:** `feature/user-auto-provisioning` (PR #46 open — merge before starting iOS)  
+**Latest Session:** 2026-07-12 - User auto-provisioning, DEPLOYMENT.md updated, Postman configured
+
+### WBS 1.3.9 Partially Complete (2026-07-12)
+- ✅ Smoke test token generation documented (Firebase custom token → ID token via REST exchange)
+- ✅ All failing smoke test assertions fixed (401 root cause: custom vs ID token; 404 root cause: no auto-provisioning)
+- ✅ Postman environment configured for manual API testing (`covey-dev` environment)
+- ✅ Postman Pre-request Script auto-refreshes Firebase ID token via refresh token (never expires)
+- ⏳ 1.3.9.1: Local smoke test runner script (without CI/CD) — deferred
+- ✅ 1.3.9.4: All 7 smoke tests passing in CI/CD pipeline (confirmed 2026-07-12)
+
+### WBS 1.3.2.3 Complete (2026-07-12)
+- ✅ `GET /me` auto-provisions Firestore user document on first sign-in
+- ✅ `AuthMiddleware.decodeToken()` exposes full `FirebaseToken` (email, displayName) to handlers
+- ✅ Verified via Postman: `smoke-test-user` provisioned successfully, returns 200
 
 ### WBS 1.3.8 Complete (2026-07-12)
 - ✅ Lambda deployed: `covey-weekly-spot-dev` handles all HTTP API + scheduled jobs
@@ -14,6 +27,7 @@
 - ✅ `LambdaRouter` detects EventBridge events and dispatches without auth check
 - ✅ CloudWatch alarms and dashboard active (`covey-weekly-job-dev`)
 - ✅ CloudFormation stack `covey-weekly-job-dev` in CREATE_COMPLETE
+- ✅ `infrastructure/DEPLOYMENT.md` updated for single-Lambda architecture
 
 ---
 

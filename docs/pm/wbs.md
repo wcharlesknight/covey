@@ -114,9 +114,9 @@
 
 #### 1.3.9 Smoke Test Local Test Runner
 - [ ] 1.3.9.1 Create local smoke test script to run without merging to main
-- [ ] 1.3.9.2 Document how to obtain FIREBASE_TEST_TOKEN for local testing
-- [ ] 1.3.9.3 Fix failing smoke test assertions (user, RSVP, push token, weekly job endpoints)
-- [ ] 1.3.9.4 Validate all 7 smoke tests pass locally before CI/CD pipeline
+- [x] 1.3.9.2 Document how to obtain FIREBASE_TEST_TOKEN for local testing
+- [x] 1.3.9.3 Fix failing smoke test assertions (user, RSVP, push token, weekly job endpoints)
+- [x] 1.3.9.4 Validate all 7 smoke tests pass locally before CI/CD pipeline
 
 ---
 
