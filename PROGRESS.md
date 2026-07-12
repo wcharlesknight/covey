@@ -13,7 +13,7 @@
 - ✅ Postman environment configured for manual API testing (`covey-dev` environment)
 - ✅ Postman Pre-request Script auto-refreshes Firebase ID token via refresh token (never expires)
 - ⏳ 1.3.9.1: Local smoke test runner script (without CI/CD) — deferred
-- ⏳ 1.3.9.4: Full local smoke test validation — pending PR #46 merge + CI run
+- ✅ 1.3.9.4: All 7 smoke tests passing in CI/CD pipeline (confirmed 2026-07-12)
 
 ### WBS 1.3.2.3 Complete (2026-07-12)
 - ✅ `GET /me` auto-provisions Firestore user document on first sign-in
