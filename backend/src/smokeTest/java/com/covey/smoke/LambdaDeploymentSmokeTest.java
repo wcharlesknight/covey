@@ -93,13 +93,18 @@ public class LambdaDeploymentSmokeTest {
   @Test
   public void testPushTokenEndpointRouting() throws Exception {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
+    Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
+
+    Map<String, Object> headers = new HashMap<>();
+    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
 
     Map<String, Object> payload = new HashMap<>();
     payload.put("path", "/push-tokens");
     payload.put("httpMethod", "POST");
+    payload.put("headers", headers);
 
     Response response = invokeLambda(payload);
-    assertEquals("Push tokens endpoint should be routable", 200, response.code());
+    assertEquals("Push tokens endpoint should be routable", 201, response.code());
   }
 
   @Test

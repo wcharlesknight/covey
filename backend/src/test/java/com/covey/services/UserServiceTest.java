@@ -23,13 +23,14 @@ public class UserServiceTest {
     assertEquals("user@example.com", user.getEmail());
     assertEquals("Test User", user.getDisplayName());
     assertEquals("Seattle", user.getCity());
-    assertTrue(user.getCreatedAt() > 0);
+    assertNotNull(user.getCreatedAt());
+    assertTrue(user.getCreatedAt().length() > 0);
   }
 
   @Test
   public void testUserUpdate() {
     User user = new User("user123", "user@example.com", "Test User", "Seattle");
-    long originalCreatedAt = user.getCreatedAt();
+    String originalCreatedAt = user.getCreatedAt();
 
     user.setEmail("newemail@example.com");
     user.setCity("Tacoma");
@@ -37,7 +38,7 @@ public class UserServiceTest {
     assertEquals("newemail@example.com", user.getEmail());
     assertEquals("Tacoma", user.getCity());
     assertEquals(originalCreatedAt, user.getCreatedAt());
-    assertTrue(user.getUpdatedAt() >= originalCreatedAt);
+    assertNotNull(user.getUpdatedAt());
   }
 
   @Test

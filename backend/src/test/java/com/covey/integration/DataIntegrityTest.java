@@ -13,7 +13,7 @@ public class DataIntegrityTest {
   @Test
   public void testUserCreatedAtImmutable() {
     User user = new User("uid123", "user@example.com", "John", "Seattle");
-    long originalCreatedAt = user.getCreatedAt();
+    String originalCreatedAt = user.getCreatedAt();
 
     try {
       Thread.sleep(100);
