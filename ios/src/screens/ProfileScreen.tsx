@@ -7,9 +7,11 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 
 const ProfileScreen = () => {
+  const navigation = useNavigation<any>();
   const { user, signOut, isLoading } = useAuthStore();
 
   const handleSignOut = async () => {
@@ -42,6 +44,16 @@ const ProfileScreen = () => {
         <View style={styles.infoRow}>
           <Text style={styles.label}>Email</Text>
           <Text style={styles.value}>{user?.email || 'Not set'}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>City</Text>
+          <View style={styles.infoRowContent}>
+            <Text style={styles.value}>{user?.city || 'Not set'}</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('ChangeCity')}>
+              <Text style={styles.changeLink}>Change</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.infoRow}>
@@ -87,6 +99,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+  },
+  infoRowContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  changeLink: {
+    fontSize: 14,
+    color: '#6B4CE6',
+    fontWeight: '600',
   },
   label: {
     fontSize: 12,

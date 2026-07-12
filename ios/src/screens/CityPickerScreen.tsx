@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient_methods } from '../services/api';
 
@@ -22,9 +23,12 @@ const CITIES = [
 ];
 
 export default function CityPickerScreen() {
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
   const { user } = useAuthStore();
+  const [selectedCity, setSelectedCity] = useState<string | null>(user?.city ?? null);
+  const [loading, setLoading] = useState(false);
+
+  const isChanging = !!user?.city;
 
   const handleSelectCity = async () => {
     if (!selectedCity) {
@@ -36,14 +40,12 @@ export default function CityPickerScreen() {
       setLoading(true);
       await apiClient_methods.updateUser({ city: selectedCity });
 
-      // Update local auth store to trigger navigation
-      if (user) {
-        useAuthStore.setState({
-          user: {
-            ...user,
-            city: selectedCity,
-          },
-        });
+      useAuthStore.setState(state => ({
+        user: state.user ? { ...state.user, city: selectedCity } : null,
+      }));
+
+      if (isChanging && navigation.canGoBack()) {
+        navigation.goBack();
       }
     } catch (error: any) {
       console.error('Failed to update city:', error);
@@ -57,7 +59,9 @@ export default function CityPickerScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Select Your City</Text>
+          <Text style={styles.title}>
+            {isChanging ? 'Change Your City' : 'Select Your City'}
+          </Text>
           <Text style={styles.subtitle}>
             We'll show you weekly spots in your area
           </Text>
@@ -91,15 +95,17 @@ export default function CityPickerScreen() {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            !selectedCity && styles.continueButtonDisabled,
+            (!selectedCity || selectedCity === user?.city) && styles.continueButtonDisabled,
           ]}
           onPress={handleSelectCity}
-          disabled={!selectedCity || loading}
+          disabled={!selectedCity || loading || selectedCity === user?.city}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.continueButtonText}>Continue</Text>
+            <Text style={styles.continueButtonText}>
+              {isChanging ? 'Save' : 'Continue'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
