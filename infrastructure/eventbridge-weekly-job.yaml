@@ -71,7 +71,7 @@ Resources:
   WeeklySelectionLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Select [6, !Split [':', !Ref LambdaFunctionArn]]
+      FunctionName: !Ref LambdaFunctionArn
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt WeeklySelectionRule.Arn
@@ -121,7 +121,7 @@ Resources:
   NotificationDeliveryLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Select [6, !Split [':', !Ref NotificationLambdaFunctionArn]]
+      FunctionName: !Ref NotificationLambdaFunctionArn
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt NotificationDeliveryRule.Arn
@@ -249,7 +249,7 @@ Resources:
                 "query": "fields @timestamp, @message, @duration | filter @message like /Weekly job/ | stats count() by bin(5m)",
                 "region": "${AWS::Region}",
                 "title": "Weekly Job Execution Count (5m bins)",
-                "queryId": "weekly-job-count"
+                "view": "table"
               }
             },
             {
@@ -257,7 +257,8 @@ Resources:
               "properties": {
                 "query": "fields @timestamp, @message | filter @message like /Error/ or @message like /FAILED/ | stats count() by @message",
                 "region": "${AWS::Region}",
-                "title": "Error Summary (Last 24h)"
+                "title": "Error Summary (Last 24h)",
+                "view": "table"
               }
             }
           ]
