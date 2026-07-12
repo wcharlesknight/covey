@@ -71,7 +71,7 @@ Resources:
   WeeklySelectionLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:covey-weekly-spot-${Environment}'
+      FunctionName: !Select [6, !Split [':', !Ref LambdaFunctionArn]]
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt WeeklySelectionRule.Arn
@@ -121,7 +121,7 @@ Resources:
   NotificationDeliveryLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:covey-notification-delivery-${Environment}'
+      FunctionName: !Select [6, !Split [':', !Ref NotificationLambdaFunctionArn]]
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt NotificationDeliveryRule.Arn
