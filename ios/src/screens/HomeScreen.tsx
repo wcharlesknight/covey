@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
+import { useAuthStore } from '../store/authStore';
 import { apiClient_methods } from '../services/api';
 
 interface WeeklySpot {
@@ -29,6 +30,7 @@ interface WeeklySpot {
 }
 
 const HomeScreen = () => {
+  const { user } = useAuthStore();
   const [feed, setFeed] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +96,7 @@ const HomeScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.weeklyTitle}>This Week's Spot</Text>
+        {user?.city && <Text style={styles.cityText}>Your city: {user.city}</Text>}
         <Text style={styles.date}>{feed?.current?.date}</Text>
       </View>
 
@@ -179,6 +182,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1F2937',
     marginBottom: 4,
+  },
+  cityText: {
+    fontSize: 18,
+    color: '#6B4CE6',
+    fontWeight: '600',
+    marginBottom: 8,
   },
   date: {
     fontSize: 14,

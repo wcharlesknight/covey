@@ -37,6 +37,7 @@
 | 1.3.6.1-10 | Weekly Job Lambda | ⏳ NOT STARTED | - | **NEXT PRIORITY**: Spot selection, venue exclusion, invites, notifications |
 | 1.3.7.1-4 | Backend Testing & QA | ✅ COMPLETE | #20 | 67 tests passing, integration tests, smoke tests |
 | 1.3.8.1-5 | Backend Deployment | ✅ COMPLETE | #21, #23 | API Gateway, Lambda deployed, CloudWatch configured |
+| 1.3.9.1-4 | Smoke Test Local Runner | ⏳ IN PROGRESS | - | **CURRENT PRIORITY**: Fix failing smoke tests, create local runner script |
 
 ---
 
