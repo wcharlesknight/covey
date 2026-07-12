@@ -59,7 +59,36 @@ public class GooglePlacesClient {
       }
     }
 
+    // Sort by rating DESC, then review count DESC (highest rated, most reviewed first)
+    results.sort((a, b) -> {
+      int ratingCompare = Double.compare(b.getRating(), a.getRating());
+      if (ratingCompare != 0) {
+        return ratingCompare;
+      }
+      return Integer.compare(b.getReviewCount(), a.getReviewCount());
+    });
+
     return results;
+  }
+
+  /**
+   * Select the top-ranked venue from a list of candidates.
+   *
+   * Ranking: highest rating first, review count as tiebreaker.
+   */
+  public WeeklySpot selectTopVenue(List<WeeklySpot> venues) {
+    if (venues == null || venues.isEmpty()) {
+      return null;
+    }
+    // Sort by rating DESC, then review count DESC
+    venues.sort((a, b) -> {
+      int ratingCompare = Double.compare(b.getRating(), a.getRating());
+      if (ratingCompare != 0) {
+        return ratingCompare;
+      }
+      return Integer.compare(b.getReviewCount(), a.getReviewCount());
+    });
+    return venues.get(0);
   }
 
   private String fetchUrl(String urlString) throws Exception {
