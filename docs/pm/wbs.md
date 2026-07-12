@@ -88,15 +88,15 @@
 - [x] 1.3.5.3 Write unit and integration tests for push token registration
 
 #### 1.3.6 Weekly Job Lambda
-- [ ] 1.3.6.1 Implement spot selection logic - query Google Places API for candidate venues in target city
-- [ ] 1.3.6.2 Implement venue exclusion list check (skip venues in VenueExclusionList collection)
-- [ ] 1.3.6.3 Implement venue rotation logic (avoid repeating recent spots)
-- [ ] 1.3.6.4 Implement WeeklySpot document creation in Firestore
-- [ ] 1.3.6.5 Implement Invite document creation for all eligible users in the city
-- [ ] 1.3.6.6 Implement push notification dispatch via FCM for all users with registered tokens
-- [ ] 1.3.6.7 Implement email notification dispatch (AWS SES or Firebase Extension)
-- [ ] 1.3.6.8 Implement error handling and retry logic for notification failures
-- [ ] 1.3.6.9 Write unit tests for spot selection, exclusion, and rotation logic
+- [x] 1.3.6.1 Implement spot selection logic - query Google Places API for candidate venues in target city
+- [x] 1.3.6.2 Implement venue exclusion list check (skip venues in VenueExclusionList collection)
+- [x] 1.3.6.3 Implement venue rotation logic (avoid repeating recent spots)
+- [x] 1.3.6.4 Implement WeeklySpot document creation in Firestore
+- [x] 1.3.6.5 Implement Invite document creation for all eligible users in the city
+- [x] 1.3.6.6 Implement push notification dispatch via FCM for all users with registered tokens
+- [x] 1.3.6.7 Implement email notification dispatch (AWS SES or Firebase Extension)
+- [x] 1.3.6.8 Implement error handling and retry logic for notification failures
+- [x] 1.3.6.9 Write unit tests for spot selection, exclusion, and rotation logic
 - [ ] 1.3.6.10 Write integration tests for full weekly job flow (with Firestore emulator)
 
 #### 1.3.7 Backend Testing and Quality
