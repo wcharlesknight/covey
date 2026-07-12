@@ -38,12 +38,28 @@ public class VenueExclusion {
     return city;
   }
 
+  public void setCity(String city) {
+    this.city = city;
+  }
+
+  public void setWeekId(String weekId) {
+    this.weekId = weekId;
+  }
+
   public String getWeekId() {
     return weekId;
   }
 
   public List<String> getVenueIds() {
     return venueIds;
+  }
+
+  public void setVenueIds(List<String> venueIds) {
+    this.venueIds = venueIds;
+  }
+
+  public void setUpdatedAt(long updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   public long getUpdatedAt() {

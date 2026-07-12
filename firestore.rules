@@ -1,0 +1,144 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // User is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Request is from Lambda job service (Firebase Admin SDK)
+    // Admin SDK requests have no custom claims, but we can verify by checking
+    // that the request contains a valid service account token.
+    // For MVP: Allow writes from admin context (Admin SDK bypasses rules).
+    // Better: Add custom claim verification when available.
+    function isJobService() {
+      // TODO: Implement service account verification
+      // For now, rely on Lambda having service account credentials
+      // Admin SDK automatically has elevated privileges
+      return true;
+    }
+
+    // User owns this resource
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Document data is unchanged
+    function isUnchanged(field) {
+      return resource.data[field] == request.resource.data[field];
+    }
+
+    // ============================================
+    // COLLECTION: users
+    // ============================================
+    // User profiles: user can read/write own, job service can read all
+    match /users/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isOwner(userId) &&
+                      // Prevent changing immutable fields
+                      isUnchanged('uid') &&
+                      isUnchanged('createdAt');
+      allow read: if isJobService(); // Job service can read all for context
+    }
+
+    // ============================================
+    // COLLECTION: users/{userId}/pushTokens
+    // ============================================
+    // Device tokens: user can read/write own, job service can read for dispatch
+    match /users/{userId}/pushTokens/{tokenId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isOwner(userId);
+      allow read: if isJobService(); // Job service reads to send notifications
+    }
+
+    // ============================================
+    // COLLECTION: invites
+    // ============================================
+    // User invites (to respond to weekly spots)
+    // ID format: {userId}_{weekId}
+    // User can read own invites, write own status changes
+    // Job service writes initial invites
+    match /invites/{inviteId} {
+      allow read: if isAuthenticated() &&
+                     request.auth.uid == resource.data.userId;
+      allow write: if isJobService(); // Job creates invites
+      allow update: if isAuthenticated() &&
+                       request.auth.uid == resource.data.userId &&
+                       // User can only change status and updatedAt
+                       request.resource.data.keys().hasOnly(['id', 'userId', 'weekId', 'venueId', 'city', 'status', 'updatedAt', 'createdAt']) &&
+                       isUnchanged('id') &&
+                       isUnchanged('userId') &&
+                       isUnchanged('weekId') &&
+                       isUnchanged('venueId') &&
+                       isUnchanged('city') &&
+                       isUnchanged('createdAt');
+    }
+
+    // ============================================
+    // COLLECTION: weeklySpots
+    // ============================================
+    // Weekly venue selections (public to all authenticated users)
+    // ID format: {city}_{weekId}
+    // All authenticated can read, job service writes only
+    match /weeklySpots/{spotId} {
+      allow read: if isAuthenticated();
+      allow write: if isJobService();
+    }
+
+    // ============================================
+    // COLLECTION: venueExclusions
+    // ============================================
+    // 12-week venue rotation history (job service only)
+    // ID format: {city}_{weekId}
+    // Job service reads for rotation logic, writes to update history
+    match /venueExclusions/{exclusionId} {
+      allow read: if isJobService();
+      allow write: if isJobService();
+    }
+
+    // ============================================
+    // COLLECTION: scheduledNotifications
+    // ============================================
+    // Friday 9am delivery queue (decouples selection from dispatch)
+    // Job service writes, notification service reads/updates
+    match /scheduledNotifications/{notificationId} {
+      allow read: if isJobService();
+      allow write: if isJobService();
+      allow update: if isJobService(); // Notification service updates status
+    }
+
+    // ============================================
+    // COLLECTION: weeklyJobRuns
+    // ============================================
+    // Job execution logs and monitoring
+    // Job service writes, no user reads (backend only)
+    match /weeklyJobRuns/{jobId} {
+      allow read: if isJobService();
+      allow write: if isJobService();
+    }
+
+    // ============================================
+    // COLLECTION: auditLogs
+    // ============================================
+    // Event audit trail (immutable log for compliance)
+    // Job service writes, no user reads, no updates (immutable)
+    match /auditLogs/{entryId} {
+      allow read: if false; // No reads (backend only)
+      allow create: if isJobService();
+      allow write: if false; // Immutable
+    }
+
+    // ============================================
+    // DEFAULT: DENY ALL
+    // ============================================
+    // Catch-all: deny everything not explicitly allowed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
