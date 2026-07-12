@@ -48,10 +48,25 @@
 - Metro config and Babel preset aligned with Expo standards
 
 ### Firebase
+- **Project ID (Dev):** `covey-76e19`
+- **Firestore:** Enabled with row-level security rules (deployed 2026-07-12)
+- **MCP Access:** Firebase MCP available for operations
 - Client config in `ios/.env` (git-ignored)
 - Environment variables: `EXPO_PUBLIC_*`
 - Auth methods: Apple, Google, Email/Password
 - Firestore for real-time data
+- **Firestore Rules:** See `/firestore.rules` — row-level access control
+- **MCP Access:** Firebase MCP available for security rules, indexes, data management
+
+#### Firestore Collections (Security Rules Applied)
+| Collection | Access | Purpose |
+|-----------|--------|---------|
+| `users/{userId}` | Owner only | User profiles |
+| `users/{userId}/pushTokens/{token}` | Owner only | Device tokens (user-scoped) |
+| `invites/{userId}_{weekId}` | Owner + job service | User invites |
+| `weeklySpots/{city}_{weekId}` | Authenticated read, job write | Venue selections |
+| `venueExclusions/{city}_{weekId}` | Job service only | 12-week rotation tracking |
+| `auditLogs/{entryId}` | Job service only | Event audit trail |
 
 ### API Backend
 - Lambda deployed at: `https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev`
@@ -97,6 +112,42 @@ npx expo start --clear
 # Check your Lambda is running
 curl https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev/me \
   -H "Authorization: Bearer <firebase-id-token>"
+```
+
+---
+
+## Firebase Operations (via MCP)
+
+### Using Firebase MCP
+The Firebase MCP is available for direct Firestore operations:
+- Deploy/update security rules: `firestore.rules`
+- Create/manage composite indexes
+- Verify collection structure
+- Migrate data between collections
+- Query Firestore in scripts
+
+### Common Tasks
+
+**Deploy Firestore Security Rules:**
+```
+Use Firebase MCP to deploy updated firestore.rules to covey-dev or covey-prod
+```
+
+**Create Composite Indexes:**
+```
+Required indexes (via Firebase console or MCP):
+- invites: (city, userId, createdAt)
+- invites: (userId, weekId)
+- weeklySpots: (city, weekId)
+- venueExclusions: (city, week range)
+- pushTokens: (userId)
+```
+
+**Verify Security Rules Work:**
+```
+Test row-level access control in Firestore emulator or console
+- User can only read/write own documents
+- Job service (via Firebase Admin SDK) can read/write all
 ```
 
 ---

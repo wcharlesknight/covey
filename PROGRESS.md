@@ -2,10 +2,10 @@
 
 ## 📍 Quick Status
 
-**Current WBS:** 2.1 - iOS Firebase Configuration & Local Testing  
-**Status:** ✅ COMPLETE - iOS app launching on simulator successfully  
-**Branch:** `feature/expo-local-startup` (PR #21 - ready to merge)
-**Latest Session:** 2026-06-30 - Fixed startup crashes with Expo config alignment
+**Current WBS:** 1.3.6 - Weekly Job Lambda (Phase 1-2: Planning & TDD Scaffolds)  
+**Status:** ✅ PHASE 1-2 COMPLETE - PR #28 merged; ready for Phase 2 implementation  
+**Latest Branch:** `main` (PR #28 merged 2026-07-12)  
+**Latest Session:** 2026-07-12 - Completed design review; Phase 1 TDD foundation ready
 
 ---
 
