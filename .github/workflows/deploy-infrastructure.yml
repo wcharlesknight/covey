@@ -48,19 +48,23 @@ jobs:
 
       - name: Deploy EventBridge infrastructure (CloudFormation)
         run: |
+          # Determine environment (from workflow_dispatch input or default to dev)
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          echo "Deploying infrastructure for environment: $ENV"
+
           # Get Lambda function ARNs
           echo "Fetching Lambda function ARNs..."
           WEEKLY_JOB_ARN=$(aws lambda get-function \
-            --function-name covey-weekly-spot-dev \
+            --function-name covey-weekly-spot-${ENV} \
             --region ${{ env.AWS_REGION }} \
             --query 'Configuration.FunctionArn' \
             --output text)
 
           NOTIFICATION_ARN=$(aws lambda get-function \
-            --function-name covey-notification-delivery-dev \
+            --function-name covey-notification-delivery-${ENV} \
             --region ${{ env.AWS_REGION }} \
             --query 'Configuration.FunctionArn' \
-            --output text 2>/dev/null || echo "arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:covey-notification-delivery-dev")
+            --output text 2>/dev/null || echo "arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:covey-notification-delivery-${ENV}")
 
           echo "Weekly Job Lambda ARN: $WEEKLY_JOB_ARN"
           echo "Notification Lambda ARN: $NOTIFICATION_ARN"
@@ -69,9 +73,9 @@ jobs:
           echo "Deploying EventBridge infrastructure stack..."
           aws cloudformation deploy \
             --template-file infrastructure/eventbridge-weekly-job.yaml \
-            --stack-name covey-weekly-job-dev \
+            --stack-name covey-weekly-job-${ENV} \
             --parameter-overrides \
-              Environment=dev \
+              Environment=${ENV} \
               LambdaFunctionArn=$WEEKLY_JOB_ARN \
               NotificationLambdaFunctionArn=$NOTIFICATION_ARN \
             --region ${{ env.AWS_REGION }} \
@@ -82,18 +86,19 @@ jobs:
 
       - name: Verify EventBridge rules
         run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
           echo "Verifying EventBridge rules..."
 
           echo "Selection rule (Thursday 9 PM EST):"
           aws events describe-rule \
-            --name covey-weekly-selection-dev \
+            --name covey-weekly-selection-${ENV} \
             --region ${{ env.AWS_REGION }} \
             --query 'State,ScheduleExpression' \
             --output text
 
           echo "Delivery rule (Friday 9 AM EST):"
           aws events describe-rule \
-            --name covey-notification-delivery-dev \
+            --name covey-notification-delivery-${ENV} \
             --region ${{ env.AWS_REGION }} \
             --query 'State,ScheduleExpression' \
             --output text
@@ -102,8 +107,9 @@ jobs:
 
       - name: Get CloudWatch dashboard URL
         run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
           DASHBOARD_URL=$(aws cloudformation describe-stacks \
-            --stack-name covey-weekly-job-dev \
+            --stack-name covey-weekly-job-${ENV} \
             --region ${{ env.AWS_REGION }} \
             --query 'Stacks[0].Outputs[?OutputKey==`DashboardURL`].OutputValue' \
             --output text)
