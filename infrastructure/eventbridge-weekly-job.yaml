@@ -10,11 +10,7 @@ Parameters:
 
   LambdaFunctionArn:
     Type: String
-    Description: ARN of the weekly job Lambda function (e.g., arn:aws:lambda:us-west-2:ACCOUNT:function:covey-weekly-spot-dev)
-
-  NotificationLambdaFunctionArn:
-    Type: String
-    Description: ARN of the notification dispatch Lambda function
+    Description: ARN of the Lambda function (e.g., arn:aws:lambda:us-west-2:ACCOUNT:function:covey-weekly-spot-dev)
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -23,19 +19,16 @@ Metadata:
           default: 'Lambda Configuration'
         Parameters:
           - LambdaFunctionArn
-          - NotificationLambdaFunctionArn
 
 Resources:
   # ============================================
-  # EventBridge Rule: Thursday Selection Job
+  # Shared IAM Role: EventBridge → Lambda
   # ============================================
-  # Triggers at Thursday 21:00 EST (9 PM)
-  # Selects venues, creates WeeklySpot + Invite docs, queues notifications
 
-  WeeklySelectionEventBridgeRole:
+  EventBridgeInvokeRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: WeeklySelectionEventBridgeRole
+      RoleName: !Sub 'covey-eventbridge-invoke-${Environment}'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -51,24 +44,28 @@ Resources:
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
-                Resource: !Sub '${LambdaFunctionArn}:*'
+                Resource: !Ref LambdaFunctionArn
+
+  # ============================================
+  # EventBridge Rule: Thursday Selection Job
+  # ============================================
 
   WeeklySelectionRule:
     Type: AWS::Events::Rule
     Properties:
       Name: !Sub 'covey-weekly-selection-${Environment}'
       Description: 'Weekly venue selection job (Thursday 9 PM EST)'
-      ScheduleExpression: 'cron(0 21 ? * THU *)'  # Thursday 21:00 UTC (9 PM EST during EST, 8 PM EDT during EDT)
+      ScheduleExpression: 'cron(0 2 ? * FRI *)'
       State: ENABLED
       Targets:
         - Arn: !Ref LambdaFunctionArn
-          RoleArn: !GetAtt WeeklySelectionEventBridgeRole.Arn
+          RoleArn: !GetAtt EventBridgeInvokeRole.Arn
           Id: WeeklySelectionTarget
+          Input: '{"triggerType":"WEEKLY_SELECTION"}'
           RetryPolicy:
-            MaximumEventAgeInSeconds: 3600  # 1 hour max age
+            MaximumEventAgeInSeconds: 3600
             MaximumRetryAttempts: 2
 
-  # Lambda permission for EventBridge to invoke selection job
   WeeklySelectionLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -80,50 +77,27 @@ Resources:
   # ============================================
   # EventBridge Rule: Friday Delivery Job
   # ============================================
-  # Triggers at Friday 09:00 EST (9 AM)
-  # Drains notification queue, sends FCM + SES, marks SENT/FAILED
-
-  NotificationDeliveryEventBridgeRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: NotificationDeliveryEventBridgeRole
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: InvokeLambda
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource: !Sub '${NotificationLambdaFunctionArn}:*'
 
   NotificationDeliveryRule:
     Type: AWS::Events::Rule
     Properties:
       Name: !Sub 'covey-notification-delivery-${Environment}'
       Description: 'Friday 9 AM notification delivery (FCM + SES)'
-      ScheduleExpression: 'cron(0 9 ? * FRI *)'  # Friday 09:00 UTC (9 AM EST during EST, 8 AM EDT during EDT)
+      ScheduleExpression: 'cron(0 14 ? * FRI *)'
       State: ENABLED
       Targets:
-        - Arn: !Ref NotificationLambdaFunctionArn
-          RoleArn: !GetAtt NotificationDeliveryEventBridgeRole.Arn
+        - Arn: !Ref LambdaFunctionArn
+          RoleArn: !GetAtt EventBridgeInvokeRole.Arn
           Id: NotificationDeliveryTarget
+          Input: '{"triggerType":"NOTIFICATION_DELIVERY"}'
           RetryPolicy:
-            MaximumEventAgeInSeconds: 7200  # 2 hours max age
+            MaximumEventAgeInSeconds: 7200
             MaximumRetryAttempts: 1
 
-  # Lambda permission for EventBridge to invoke delivery job
   NotificationDeliveryLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref NotificationLambdaFunctionArn
+      FunctionName: !Ref LambdaFunctionArn
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt NotificationDeliveryRule.Arn
@@ -166,23 +140,6 @@ Resources:
           Value: !Sub 'covey-weekly-spot-${Environment}'
       TreatMissingData: notBreaching
 
-  NotificationDeliveryErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub 'covey-notification-delivery-errors-${Environment}'
-      AlarmDescription: 'Alert when notification delivery Lambda has errors'
-      MetricName: Errors
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      Dimensions:
-        - Name: FunctionName
-          Value: !Sub 'covey-notification-delivery-${Environment}'
-      TreatMissingData: notBreaching
-
   # ============================================
   # CloudWatch Dashboard
   # ============================================
@@ -202,58 +159,27 @@ Resources:
               "height": 6,
               "properties": {
                 "metrics": [
-                  [ "AWS/Lambda", "Invocations", "FunctionName", "covey-weekly-spot-${Environment}", { "stat": "Sum", "label": "Weekly Selection Invocations" } ],
-                  [ ".", "Errors", ".", ".", { "stat": "Sum", "label": "Selection Errors" } ],
-                  [ ".", "Duration", ".", ".", { "stat": "Average", "label": "Selection Duration (ms)" } ],
-                  [ ".", "Throttles", ".", ".", { "stat": "Sum", "label": "Selection Throttles" } ]
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "covey-weekly-spot-${Environment}", { "stat": "Sum", "label": "Invocations" } ],
+                  [ ".", "Errors", ".", ".", { "stat": "Sum", "label": "Errors" } ],
+                  [ ".", "Duration", ".", ".", { "stat": "Average", "label": "Duration (ms)" } ],
+                  [ ".", "Throttles", ".", ".", { "stat": "Sum", "label": "Throttles" } ]
                 ],
                 "period": 300,
                 "region": "${AWS::Region}",
-                "title": "Weekly Job Lambda Metrics",
+                "title": "covey-weekly-spot Lambda Metrics",
                 "view": "timeSeries"
               }
             },
             {
-              "type": "metric",
+              "type": "log",
               "x": 12,
               "y": 0,
               "width": 12,
               "height": 6,
               "properties": {
-                "metrics": [
-                  [ "AWS/Lambda", "Invocations", "FunctionName", "covey-notification-delivery-${Environment}", { "stat": "Sum", "label": "Notification Invocations" } ],
-                  [ ".", "Errors", ".", ".", { "stat": "Sum", "label": "Delivery Errors" } ],
-                  [ ".", "Duration", ".", ".", { "stat": "Average", "label": "Delivery Duration (ms)" } ]
-                ],
-                "period": 300,
+                "query": "SOURCE '/aws/lambda/covey-weekly-spot-${Environment}' | fields @timestamp, @message | filter @message like /triggerType/ or @message like /ERROR/ or @message like /completed/ | sort @timestamp desc | limit 50",
                 "region": "${AWS::Region}",
-                "title": "Notification Delivery Lambda Metrics",
-                "view": "timeSeries"
-              }
-            },
-            {
-              "type": "log",
-              "x": 0,
-              "y": 6,
-              "width": 12,
-              "height": 6,
-              "properties": {
-                "query": "SOURCE '/aws/lambda/covey-weekly-spot-${Environment}' | fields @timestamp, @message, @duration | filter @message like /Weekly job/ | stats count() by bin(5m)",
-                "region": "${AWS::Region}",
-                "title": "Weekly Job Execution Count (5m bins)",
-                "view": "table"
-              }
-            },
-            {
-              "type": "log",
-              "x": 12,
-              "y": 6,
-              "width": 12,
-              "height": 6,
-              "properties": {
-                "query": "SOURCE '/aws/lambda/covey-notification-delivery-${Environment}' | fields @timestamp, @message | filter @message like /Error/ or @message like /FAILED/ | stats count() by @message",
-                "region": "${AWS::Region}",
-                "title": "Error Summary (Last 24h)",
+                "title": "Recent Job Executions",
                 "view": "table"
               }
             }
@@ -275,4 +201,4 @@ Outputs:
 
   DashboardURL:
     Description: CloudWatch Dashboard URL
-    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${WeeklyJobDashboard}'
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=covey-weekly-job-${Environment}'

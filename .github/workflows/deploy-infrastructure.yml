@@ -52,22 +52,15 @@ jobs:
           ENV="${{ github.event.inputs.environment || 'dev' }}"
           echo "Deploying infrastructure for environment: $ENV"
 
-          # Get Lambda function ARNs
-          echo "Fetching Lambda function ARNs..."
-          WEEKLY_JOB_ARN=$(aws lambda get-function \
+          # Get Lambda function ARN
+          echo "Fetching Lambda function ARN..."
+          LAMBDA_ARN=$(aws lambda get-function \
             --function-name covey-weekly-spot-${ENV} \
             --region ${{ env.AWS_REGION }} \
             --query 'Configuration.FunctionArn' \
             --output text)
 
-          NOTIFICATION_ARN=$(aws lambda get-function \
-            --function-name covey-notification-delivery-${ENV} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'Configuration.FunctionArn' \
-            --output text 2>/dev/null || echo "arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:covey-notification-delivery-${ENV}")
-
-          echo "Weekly Job Lambda ARN: $WEEKLY_JOB_ARN"
-          echo "Notification Lambda ARN: $NOTIFICATION_ARN"
+          echo "Lambda ARN: $LAMBDA_ARN"
 
           # Deploy stack
           echo "Deploying EventBridge infrastructure stack..."
@@ -76,8 +69,7 @@ jobs:
             --stack-name covey-weekly-job-${ENV} \
             --parameter-overrides \
               Environment=${ENV} \
-              LambdaFunctionArn=$WEEKLY_JOB_ARN \
-              NotificationLambdaFunctionArn=$NOTIFICATION_ARN \
+              LambdaFunctionArn=$LAMBDA_ARN \
             --region ${{ env.AWS_REGION }} \
             --capabilities CAPABILITY_NAMED_IAM \
             --no-fail-on-empty-changeset

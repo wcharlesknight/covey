@@ -3,8 +3,6 @@ package com.covey;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.covey.handlers.*;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.util.Map;
 
 public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<String, Object>> {
@@ -14,6 +12,11 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
     context.getLogger().log("Lambda request received: " + event);
 
     try {
+      // EventBridge scheduled events have a triggerType field at the top level
+      if (event.containsKey("triggerType")) {
+        return handleScheduledEvent((String) event.get("triggerType"), event, context);
+      }
+
       String path = (String) event.getOrDefault("path", "");
       String method = (String) event.getOrDefault("httpMethod", "GET");
 
@@ -66,6 +69,30 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
       Map<String, Object> response = new java.util.HashMap<>();
       response.put("statusCode", 500);
       response.put("body", "Internal Server Error: " + e.getMessage());
+      return response;
+    }
+  }
+
+  private Map<String, Object> handleScheduledEvent(String triggerType, Map<String, Object> event, Context context) {
+    context.getLogger().log("Scheduled event: triggerType=" + triggerType);
+    try {
+      switch (triggerType) {
+        case "WEEKLY_SELECTION":
+          return new WeeklyJobHandler().handleScheduledEvent(context);
+        case "NOTIFICATION_DELIVERY":
+          return new NotificationDispatchHandler().handleRequest(event, context);
+        default:
+          context.getLogger().log("Unknown triggerType: " + triggerType);
+          Map<String, Object> response = new java.util.HashMap<>();
+          response.put("statusCode", 400);
+          response.put("body", "Unknown triggerType: " + triggerType);
+          return response;
+      }
+    } catch (Exception e) {
+      context.getLogger().log("Scheduled event failed: " + e.getMessage());
+      Map<String, Object> response = new java.util.HashMap<>();
+      response.put("statusCode", 500);
+      response.put("body", "Scheduled event failed: " + e.getMessage());
       return response;
     }
   }
