@@ -22,6 +22,7 @@ interface User {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  city: string | null;
 }
 
 interface AuthStore {
@@ -91,6 +92,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
+              city: null,
             },
             isInitializing: false,
             error: null,
@@ -128,6 +130,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           email: userCredential.user.email,
           displayName: userCredential.user.displayName,
           photoURL: userCredential.user.photoURL,
+          city: null,
         },
         isLoading: false,
       });
@@ -154,6 +157,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           email: userCredential.user.email,
           displayName: userCredential.user.displayName,
           photoURL: userCredential.user.photoURL,
+          city: null,
         },
         isLoading: false,
       });
@@ -193,6 +197,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           email: userCredential.user.email,
           displayName: userCredential.user.displayName,
           photoURL: userCredential.user.photoURL,
+          city: null,
         },
         isLoading: false,
       });
@@ -222,6 +227,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           email: userCredential.user.email,
           displayName: userCredential.user.displayName,
           photoURL: userCredential.user.photoURL,
+          city: null,
         },
         isLoading: false,
       });

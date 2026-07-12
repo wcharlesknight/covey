@@ -77,8 +77,8 @@ export default function App() {
     return null; // Splash screen still visible
   }
 
-  const userCity = user?.city;
-  const isUserOnboarded = user && userCity && userCity.length > 0;
+  const userCity = user?.city ?? undefined;
+  const isUserOnboarded = user && userCity;
 
   return (
     <SafeAreaProvider>
