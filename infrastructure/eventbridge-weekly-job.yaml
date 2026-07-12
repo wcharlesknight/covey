@@ -210,6 +210,10 @@ Resources:
           "widgets": [
             {
               "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
               "properties": {
                 "metrics": [
                   [ "AWS/Lambda", "Invocations", { "stat": "Sum" }, { "label": "Weekly Selection Invocations" } ],
@@ -228,6 +232,10 @@ Resources:
             },
             {
               "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
               "properties": {
                 "metrics": [
                   [ "AWS/Lambda", "Invocations", { "stat": "Sum" }, { "label": "Notification Invocations" } ],
@@ -245,20 +253,30 @@ Resources:
             },
             {
               "type": "log",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
               "properties": {
                 "query": "fields @timestamp, @message, @duration | filter @message like /Weekly job/ | stats count() by bin(5m)",
                 "region": "${AWS::Region}",
                 "title": "Weekly Job Execution Count (5m bins)",
-                "view": "table"
+                "view": "table",
+                "logGroupNames": ["/aws/lambda/covey-weekly-spot-${Environment}"]
               }
             },
             {
               "type": "log",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
               "properties": {
                 "query": "fields @timestamp, @message | filter @message like /Error/ or @message like /FAILED/ | stats count() by @message",
                 "region": "${AWS::Region}",
                 "title": "Error Summary (Last 24h)",
-                "view": "table"
+                "view": "table",
+                "logGroupNames": ["/aws/lambda/covey-notification-delivery-${Environment}"]
               }
             }
           ]
