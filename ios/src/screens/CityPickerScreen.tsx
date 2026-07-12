@@ -35,7 +35,16 @@ export default function CityPickerScreen() {
     try {
       setLoading(true);
       await apiClient_methods.updateUser({ city: selectedCity });
-      Alert.alert('Success', `City updated to ${selectedCity}`);
+
+      // Update local auth store to trigger navigation
+      if (user) {
+        useAuthStore.setState({
+          user: {
+            ...user,
+            city: selectedCity,
+          },
+        });
+      }
     } catch (error: any) {
       console.error('Failed to update city:', error);
       Alert.alert('Error', error.response?.data?.error || 'Failed to update city');
