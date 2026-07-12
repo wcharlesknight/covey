@@ -39,9 +39,32 @@ public class RsvpHandler implements RequestHandler<Map<String, Object>, Map<Stri
         return error(401, "Unauthorized");
       }
 
-      String pathParameters = (String) event.getOrDefault("pathParameters", "{}");
-      Map<String, String> params = gson.fromJson(pathParameters, Map.class);
-      String inviteId = params.getOrDefault("id", "");
+      // Extract invite ID from path or pathParameters
+      String inviteId = "";
+
+      // First try pathParameters (normal API Gateway)
+      Object pathParamsObj = event.getOrDefault("pathParameters", null);
+      if (pathParamsObj != null) {
+        Map<String, String> params = gson.fromJson(gson.toJson(pathParamsObj), Map.class);
+        inviteId = params.getOrDefault("id", "");
+      }
+
+      // If not found, extract from path (for direct invocation)
+      if (inviteId.isEmpty()) {
+        String path = (String) event.getOrDefault("path", "");
+        if (path.startsWith("/dev/")) {
+          path = path.substring(4);
+        }
+        if (path.startsWith("/prod/")) {
+          path = path.substring(5);
+        }
+
+        // Extract ID from /invites/{id}/rsvp
+        String[] parts = path.split("/");
+        if (parts.length >= 3 && "invites".equals(parts[1])) {
+          inviteId = parts[2];
+        }
+      }
 
       if (inviteId.isEmpty()) {
         return error(400, "Invite ID required");

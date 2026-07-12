@@ -132,17 +132,37 @@ public class LambdaDeploymentSmokeTest {
   }
 
   private Response invokeLambda(Map<String, Object> payload) throws Exception {
-    String jsonPayload = gson.toJson(payload);
+    String path = (String) payload.getOrDefault("path", "/");
+    String method = (String) payload.getOrDefault("httpMethod", "GET");
+    Map<String, Object> headers = (Map<String, Object>) payload.getOrDefault("headers", new HashMap<>());
+    String body = (String) payload.getOrDefault("body", "");
 
-    RequestBody body = RequestBody.create(
-      jsonPayload,
-      okhttp3.MediaType.get("application/json")
-    );
+    String url = LAMBDA_ENDPOINT + path;
 
-    Request request = new Request.Builder()
-      .url(LAMBDA_ENDPOINT)
-      .post(body)
-      .build();
+    Request.Builder requestBuilder = new Request.Builder().url(url);
+
+    // Add headers
+    for (Map.Entry<String, Object> entry : headers.entrySet()) {
+      requestBuilder.addHeader(entry.getKey(), entry.getValue().toString());
+    }
+
+    // Build request with appropriate method and body
+    Request request;
+    if ("POST".equals(method)) {
+      RequestBody requestBody = RequestBody.create(
+        body.isEmpty() ? "{}" : body,
+        okhttp3.MediaType.get("application/json")
+      );
+      request = requestBuilder.post(requestBody).build();
+    } else if ("PATCH".equals(method)) {
+      RequestBody requestBody = RequestBody.create(
+        body.isEmpty() ? "{}" : body,
+        okhttp3.MediaType.get("application/json")
+      );
+      request = requestBuilder.patch(requestBody).build();
+    } else {
+      request = requestBuilder.get().build();
+    }
 
     return client.newCall(request).execute();
   }
