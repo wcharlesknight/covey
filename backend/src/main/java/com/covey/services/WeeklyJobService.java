@@ -1,28 +1,32 @@
 package com.covey.services;
 
 import com.covey.integrations.GooglePlacesClient;
-import com.covey.models.Invite;
 import com.covey.models.User;
+import com.covey.models.VenueExclusion;
 import com.covey.models.WeeklySpot;
 import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 
 public class WeeklyJobService {
   private static final String USERS_COLLECTION = "users";
   private static final String WEEKLY_SPOTS_COLLECTION = "weeklySpots";
-  private static final String INVITES_COLLECTION = "invites";
+  private static final String VENUE_EXCLUSIONS_COLLECTION = "venueExclusions";
 
   private final GooglePlacesClient placesClient;
+  private final VenueRotationService rotationService;
+  private final InviteBatchService inviteBatchService;
 
   // City coordinates (Seattle and Tacoma)
   private static final Map<String, double[]> CITY_COORDS = new HashMap<>();
@@ -34,35 +38,89 @@ public class WeeklyJobService {
 
   public WeeklyJobService(GooglePlacesClient placesClient) {
     this.placesClient = placesClient;
+    this.rotationService = new VenueRotationService();
+    this.inviteBatchService = new InviteBatchService();
   }
 
   public void executeWeeklyJob() throws ExecutionException, InterruptedException, Exception {
+    String weekId = getCurrentWeekId();
+    long weekStartDate = getWeekStartDate();
+
     for (String city : CITY_COORDS.keySet()) {
-      double[] coords = CITY_COORDS.get(city);
-      executeForCity(city, coords[0], coords[1]);
+      try {
+        double[] coords = CITY_COORDS.get(city);
+        executeForCity(city, coords[0], coords[1], weekId, weekStartDate);
+      } catch (Exception e) {
+        // Skip city on error, continue to next
+        System.err.println("Error processing city " + city + ": " + e.getMessage());
+      }
     }
   }
 
-  private void executeForCity(String city, double latitude, double longitude)
-      throws Exception, ExecutionException, InterruptedException {
+  private void executeForCity(String city, double latitude, double longitude, String weekId,
+      long weekStartDate) throws Exception, ExecutionException, InterruptedException {
+    // 1. Get venue candidates from Google Places API
     List<WeeklySpot> venues = placesClient.searchVenues(city, latitude, longitude);
 
     if (venues.isEmpty()) {
-      throw new Exception("No eligible venues found for " + city);
+      // Skip city if no venues found
+      System.out.println("No eligible venues found for " + city + ", skipping");
+      return;
     }
 
-    WeeklySpot selectedSpot = venues.get(0);
-    selectedSpot.setId(UUID.randomUUID().toString());
+    // 2. Filter out excluded venues (12-week rotation)
+    Set<String> exclusions = getExclusionSet(city);
+    List<WeeklySpot> eligible = new ArrayList<>();
+    for (WeeklySpot venue : venues) {
+      if (!exclusions.contains(venue.getVenueId())) {
+        eligible.add(venue);
+      }
+    }
 
+    if (eligible.isEmpty()) {
+      // All venues excluded, skip city
+      System.out.println("All venues excluded for " + city + ", skipping");
+      return;
+    }
+
+    // 3. Select top-ranked venue
+    WeeklySpot selectedSpot = placesClient.selectTopVenue(eligible);
+    selectedSpot.setId(WeeklySpot.generateId(city, weekId));
+    selectedSpot.setWeekId(weekId);
+
+    // 4. Save WeeklySpot to Firestore
     saveWeeklySpot(selectedSpot);
 
+    // 5. Record this venue in exclusion list for future weeks
+    recordVenueExclusion(city, weekId, selectedSpot.getVenueId(), weekStartDate);
+
+    // 6. Get users in this city
     List<User> usersInCity = getUsersByCity(city);
 
-    for (User user : usersInCity) {
-      Invite invite = new Invite(user.getUid(), selectedSpot.getId(), city);
-      invite.setId(UUID.randomUUID().toString());
-      saveInvite(invite);
+    // 7. Create and batch write invites for all users
+    if (!usersInCity.isEmpty()) {
+      inviteBatchService.createInvites(selectedSpot, usersInCity);
     }
+  }
+
+  private Set<String> getExclusionSet(String city)
+      throws ExecutionException, InterruptedException {
+    Firestore db = FirestoreClient.getFirestore();
+    // Query venue exclusions for this city
+    Query query = db.collection(VENUE_EXCLUSIONS_COLLECTION).whereEqualTo("city", city);
+
+    ApiFuture<QuerySnapshot> future = query.get();
+    QuerySnapshot snapshot = future.get();
+
+    List<VenueExclusion> exclusions = new ArrayList<>();
+    for (var doc : snapshot.getDocuments()) {
+      VenueExclusion exclusion = doc.toObject(VenueExclusion.class);
+      if (exclusion != null) {
+        exclusions.add(exclusion);
+      }
+    }
+
+    return rotationService.buildExclusionSet(exclusions);
   }
 
   private void saveWeeklySpot(WeeklySpot spot) throws ExecutionException, InterruptedException {
@@ -70,9 +128,17 @@ public class WeeklyJobService {
     db.collection(WEEKLY_SPOTS_COLLECTION).document(spot.getId()).set(spot).get();
   }
 
-  private void saveInvite(Invite invite) throws ExecutionException, InterruptedException {
+  private void recordVenueExclusion(String city, String weekId, String venueId,
+      long weekStartDate) throws ExecutionException, InterruptedException {
     Firestore db = FirestoreClient.getFirestore();
-    db.collection(INVITES_COLLECTION).document(invite.getId()).set(invite).get();
+    VenueExclusion exclusion = new VenueExclusion();
+    exclusion.setCity(city);
+    exclusion.setWeekId(weekId);
+    exclusion.setVenueIds(List.of(venueId));
+    exclusion.setUpdatedAt(System.currentTimeMillis());
+
+    String documentId = VenueExclusion.generateId(city, weekId);
+    db.collection(VENUE_EXCLUSIONS_COLLECTION).document(documentId).set(exclusion).get();
   }
 
   private List<User> getUsersByCity(String city)
@@ -93,5 +159,28 @@ public class WeeklyJobService {
     }
 
     return users;
+  }
+
+  private String getCurrentWeekId() {
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("America/New_York"));
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-'W'ww");
+    sdf.setCalendar(calendar);
+    return sdf.format(calendar.getTime());
+  }
+
+  private long getWeekStartDate() {
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("America/New_York"));
+    // Set to Thursday of current week
+    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+    int daysToThursday = Calendar.THURSDAY - dayOfWeek;
+    if (daysToThursday > 0) {
+      daysToThursday -= 7;
+    }
+    calendar.add(Calendar.DAY_OF_MONTH, daysToThursday);
+    calendar.set(Calendar.HOUR_OF_DAY, 0);
+    calendar.set(Calendar.MINUTE, 0);
+    calendar.set(Calendar.SECOND, 0);
+    calendar.set(Calendar.MILLISECOND, 0);
+    return calendar.getTimeInMillis();
   }
 }
