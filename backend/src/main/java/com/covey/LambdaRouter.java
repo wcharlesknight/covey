@@ -52,6 +52,8 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
         }
       } else if ((path.equals("/auth") || path.equals("/auth/refresh")) && method.equals("POST")) {
         return new AuthHandler().handleRequest(event, context);
+      } else if (path.equals("/notifications/send-test") && method.equals("POST")) {
+        return new NotificationTriggerHandler().handleRequest(event, context);
       } else {
         // 404 Not Found
         Map<String, Object> response = new java.util.HashMap<>();

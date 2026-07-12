@@ -111,6 +111,22 @@ public class NotificationService {
   }
 
   /**
+   * Send push notification directly (for testing/manual triggers).
+   */
+  public void sendPushNotificationDirect(ScheduledNotification notification)
+      throws ExecutionException, InterruptedException, Exception {
+    sendPushNotification(notification);
+  }
+
+  /**
+   * Send email notification directly (for testing/manual triggers).
+   */
+  public void sendEmailNotificationDirect(ScheduledNotification notification)
+      throws Exception {
+    sendEmailNotification(notification);
+  }
+
+  /**
    * Send push notification via FCM.
    */
   private void sendPushNotification(ScheduledNotification notification)
