@@ -50,7 +50,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
-                Resource: !Sub '${LambdaFunctionArn}*'
+                Resource: !Sub '${LambdaFunctionArn}:*'
 
   WeeklySelectionRule:
     Type: AWS::Events::Rule
@@ -100,7 +100,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
-                Resource: !Sub '${NotificationLambdaFunctionArn}*'
+                Resource: !Sub '${NotificationLambdaFunctionArn}:*'
 
   NotificationDeliveryRule:
     Type: AWS::Events::Rule
