@@ -3,6 +3,7 @@ package com.covey.services;
 import com.covey.integrations.GooglePlacesClient;
 import com.covey.models.User;
 import com.covey.models.VenueExclusion;
+import com.covey.models.WeeklyJobRun;
 import com.covey.models.WeeklySpot;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.Firestore;
@@ -17,12 +18,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class WeeklyJobService {
   private static final String USERS_COLLECTION = "users";
   private static final String WEEKLY_SPOTS_COLLECTION = "weeklySpots";
   private static final String VENUE_EXCLUSIONS_COLLECTION = "venueExclusions";
+  private static final String JOB_RUNS_COLLECTION = "weeklyJobRuns";
 
   private final GooglePlacesClient placesClient;
   private final VenueRotationService rotationService;
@@ -46,15 +49,65 @@ public class WeeklyJobService {
     String weekId = getCurrentWeekId();
     long weekStartDate = getWeekStartDate();
 
+    // Check if job already completed for this week (idempotency guard)
+    if (jobAlreadyCompleted(weekId)) {
+      System.out.println("Weekly job for " + weekId + " already completed, skipping");
+      return;
+    }
+
+    // Create job run record
+    WeeklyJobRun jobRun = new WeeklyJobRun();
+    jobRun.setId(UUID.randomUUID().toString());
+    jobRun.setWeekId(weekId);
+    jobRun.setStartedAt(System.currentTimeMillis());
+    jobRun.setStatus("IN_PROGRESS");
+
+    Map<String, String> cityResults = new HashMap<>();
+    int citiesProcessed = 0;
+    int citiesSkipped = 0;
+    int citiesErrored = 0;
+
     for (String city : CITY_COORDS.keySet()) {
       try {
         double[] coords = CITY_COORDS.get(city);
         executeForCity(city, coords[0], coords[1], weekId, weekStartDate);
+        cityResults.put(city, "SUCCESS");
+        citiesProcessed++;
       } catch (Exception e) {
         // Skip city on error, continue to next
         System.err.println("Error processing city " + city + ": " + e.getMessage());
+        cityResults.put(city, "ERROR: " + e.getMessage());
+        citiesErrored++;
       }
     }
+
+    // Update job run record with results
+    jobRun.setCompletedAt(System.currentTimeMillis());
+    jobRun.setStatus("COMPLETED");
+    jobRun.setCitiesProcessed(citiesProcessed);
+    jobRun.setCitiesSkipped(citiesSkipped);
+    jobRun.setCitiesErrored(citiesErrored);
+
+    saveJobRun(jobRun);
+  }
+
+  private boolean jobAlreadyCompleted(String weekId)
+      throws ExecutionException, InterruptedException {
+    Firestore db = FirestoreClient.getFirestore();
+    Query query = db.collection(JOB_RUNS_COLLECTION)
+        .whereEqualTo("weekId", weekId)
+        .whereEqualTo("status", "COMPLETED");
+
+    ApiFuture<QuerySnapshot> future = query.get();
+    QuerySnapshot snapshot = future.get();
+
+    return !snapshot.isEmpty();
+  }
+
+  private void saveJobRun(WeeklyJobRun jobRun)
+      throws ExecutionException, InterruptedException {
+    Firestore db = FirestoreClient.getFirestore();
+    db.collection(JOB_RUNS_COLLECTION).document(jobRun.getId()).set(jobRun).get();
   }
 
   private void executeForCity(String city, double latitude, double longitude, String weekId,
