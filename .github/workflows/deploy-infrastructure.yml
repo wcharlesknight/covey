@@ -85,14 +85,14 @@ jobs:
           aws events describe-rule \
             --name covey-weekly-selection-${ENV} \
             --region ${{ env.AWS_REGION }} \
-            --query 'State,ScheduleExpression' \
+            --query '[State, ScheduleExpression]' \
             --output text
 
           echo "Delivery rule (Friday 9 AM EST):"
           aws events describe-rule \
             --name covey-notification-delivery-${ENV} \
             --region ${{ env.AWS_REGION }} \
-            --query 'State,ScheduleExpression' \
+            --query '[State, ScheduleExpression]' \
             --output text
 
           echo "✅ EventBridge rules verified"
