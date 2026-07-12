@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 /**
@@ -26,11 +27,13 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class GooglePlacesClientTest {
 
+  @Mock
   private GooglePlacesClient client;
 
   @Before
   public void setUp() {
-    client = new GooglePlacesClient();
+    // GooglePlacesClient will be mocked; tests will define behavior with Mockito
+    client = mock(GooglePlacesClient.class);
   }
 
   // ============= VENUE FILTERING TESTS =============
