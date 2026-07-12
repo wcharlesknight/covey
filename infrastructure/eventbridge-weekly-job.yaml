@@ -64,7 +64,7 @@ Resources:
           RoleArn: !GetAtt WeeklySelectionEventBridgeRole.Arn
           Id: WeeklySelectionTarget
           RetryPolicy:
-            MaximumEventAge: 3600  # 1 hour max age
+            MaximumEventAgeInSeconds: 3600  # 1 hour max age
             MaximumRetryAttempts: 2
 
   # Lambda permission for EventBridge to invoke selection job
@@ -114,7 +114,7 @@ Resources:
           RoleArn: !GetAtt NotificationDeliveryEventBridgeRole.Arn
           Id: NotificationDeliveryTarget
           RetryPolicy:
-            MaximumEventAge: 7200  # 2 hours max age
+            MaximumEventAgeInSeconds: 7200  # 2 hours max age
             MaximumRetryAttempts: 1
 
   # Lambda permission for EventBridge to invoke delivery job
@@ -216,18 +216,15 @@ Resources:
               "height": 6,
               "properties": {
                 "metrics": [
-                  [ "AWS/Lambda", "Invocations", { "stat": "Sum" }, { "label": "Weekly Selection Invocations" } ],
-                  [ ".", "Errors", { "stat": "Sum" }, { "label": "Selection Errors" } ],
-                  [ ".", "Duration", { "stat": "Average" }, { "label": "Selection Duration (ms)" } ],
-                  [ ".", "Throttles", { "stat": "Sum" }, { "label": "Selection Throttles" } ]
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "covey-weekly-spot-${Environment}", { "stat": "Sum", "label": "Weekly Selection Invocations" } ],
+                  [ ".", "Errors", ".", ".", { "stat": "Sum", "label": "Selection Errors" } ],
+                  [ ".", "Duration", ".", ".", { "stat": "Average", "label": "Selection Duration (ms)" } ],
+                  [ ".", "Throttles", ".", ".", { "stat": "Sum", "label": "Selection Throttles" } ]
                 ],
                 "period": 300,
-                "stat": "Average",
                 "region": "${AWS::Region}",
                 "title": "Weekly Job Lambda Metrics",
-                "dimensions": {
-                  "FunctionName": "covey-weekly-spot-${Environment}"
-                }
+                "view": "timeSeries"
               }
             },
             {
@@ -238,17 +235,14 @@ Resources:
               "height": 6,
               "properties": {
                 "metrics": [
-                  [ "AWS/Lambda", "Invocations", { "stat": "Sum" }, { "label": "Notification Invocations" } ],
-                  [ ".", "Errors", { "stat": "Sum" }, { "label": "Delivery Errors" } ],
-                  [ ".", "Duration", { "stat": "Average" }, { "label": "Delivery Duration (ms)" } ]
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "covey-notification-delivery-${Environment}", { "stat": "Sum", "label": "Notification Invocations" } ],
+                  [ ".", "Errors", ".", ".", { "stat": "Sum", "label": "Delivery Errors" } ],
+                  [ ".", "Duration", ".", ".", { "stat": "Average", "label": "Delivery Duration (ms)" } ]
                 ],
                 "period": 300,
-                "stat": "Average",
                 "region": "${AWS::Region}",
                 "title": "Notification Delivery Lambda Metrics",
-                "dimensions": {
-                  "FunctionName": "covey-notification-delivery-${Environment}"
-                }
+                "view": "timeSeries"
               }
             },
             {
@@ -258,11 +252,10 @@ Resources:
               "width": 12,
               "height": 6,
               "properties": {
-                "query": "fields @timestamp, @message, @duration | filter @message like /Weekly job/ | stats count() by bin(5m)",
+                "query": "SOURCE '/aws/lambda/covey-weekly-spot-${Environment}' | fields @timestamp, @message, @duration | filter @message like /Weekly job/ | stats count() by bin(5m)",
                 "region": "${AWS::Region}",
                 "title": "Weekly Job Execution Count (5m bins)",
-                "view": "table",
-                "logGroupNames": ["/aws/lambda/covey-weekly-spot-${Environment}"]
+                "view": "table"
               }
             },
             {
@@ -272,11 +265,10 @@ Resources:
               "width": 12,
               "height": 6,
               "properties": {
-                "query": "fields @timestamp, @message | filter @message like /Error/ or @message like /FAILED/ | stats count() by @message",
+                "query": "SOURCE '/aws/lambda/covey-notification-delivery-${Environment}' | fields @timestamp, @message | filter @message like /Error/ or @message like /FAILED/ | stats count() by @message",
                 "region": "${AWS::Region}",
                 "title": "Error Summary (Last 24h)",
-                "view": "table",
-                "logGroupNames": ["/aws/lambda/covey-notification-delivery-${Environment}"]
+                "view": "table"
               }
             }
           ]
