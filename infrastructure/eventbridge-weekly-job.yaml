@@ -14,7 +14,11 @@ Parameters:
 
   NotificationLambdaFunctionArn:
     Type: String
-    Description: ARN of the notification dispatch Lambda function
+    Default: ''
+    Description: ARN of the notification dispatch Lambda function (leave empty to skip delivery rule)
+
+Conditions:
+  HasNotificationLambda: !Not [!Equals [!Ref NotificationLambdaFunctionArn, '']]
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -85,6 +89,7 @@ Resources:
 
   NotificationDeliveryEventBridgeRole:
     Type: AWS::IAM::Role
+    Condition: HasNotificationLambda
     Properties:
       RoleName: NotificationDeliveryEventBridgeRole
       AssumeRolePolicyDocument:
@@ -106,6 +111,7 @@ Resources:
 
   NotificationDeliveryRule:
     Type: AWS::Events::Rule
+    Condition: HasNotificationLambda
     Properties:
       Name: !Sub 'covey-notification-delivery-${Environment}'
       Description: 'Friday 9 AM notification delivery (FCM + SES)'
@@ -122,6 +128,7 @@ Resources:
   # Lambda permission for EventBridge to invoke delivery job
   NotificationDeliveryLambdaPermission:
     Type: AWS::Lambda::Permission
+    Condition: HasNotificationLambda
     Properties:
       FunctionName: !Ref NotificationLambdaFunctionArn
       Action: lambda:InvokeFunction
@@ -268,6 +275,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-SelectionRuleArn'
 
   DeliveryRuleArn:
+    Condition: HasNotificationLambda
     Description: ARN of the notification delivery EventBridge rule
     Value: !GetAtt NotificationDeliveryRule.Arn
     Export:
