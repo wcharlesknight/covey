@@ -23,15 +23,7 @@ public class LambdaDeploymentSmokeTest {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
     Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
 
-    Map<String, Object> headers = new HashMap<>();
-    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
-
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("path", "/auth");
-    payload.put("httpMethod", "POST");
-    payload.put("headers", headers);
-
-    Response response = invokeLambda(payload);
+    Response response = invoke("POST", "/auth", authHeaders(), null);
     assertEquals("Lambda should respond to auth request", 200, response.code());
 
     String body = response.body().string();
@@ -43,17 +35,13 @@ public class LambdaDeploymentSmokeTest {
   public void testLambdaJavaCodeIsExecuting() throws Exception {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
 
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("path", "/weekly-spot");
-    payload.put("httpMethod", "GET");
-
-    Response response = invokeLambda(payload);
+    Response response = invoke("GET", "/weekly-spot", new HashMap<>(), null);
     String body = response.body().string();
 
     assertFalse("Should execute Java code (no Python errors)",
-      body.contains("lambda_placeholder") || body.contains("ImportError"));
+        body.contains("lambda_placeholder") || body.contains("ImportError"));
     assertFalse("Should not have missing class errors",
-      body.contains("ClassNotFoundException"));
+        body.contains("ClassNotFoundException"));
   }
 
   @Test
@@ -61,15 +49,7 @@ public class LambdaDeploymentSmokeTest {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
     Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
 
-    Map<String, Object> headers = new HashMap<>();
-    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
-
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("path", "/me");
-    payload.put("httpMethod", "GET");
-    payload.put("headers", headers);
-
-    Response response = invokeLambda(payload);
+    Response response = invoke("GET", "/me", authHeaders(), null);
     assertEquals("User endpoint should be routable", 200, response.code());
   }
 
@@ -78,16 +58,11 @@ public class LambdaDeploymentSmokeTest {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
     Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
 
-    Map<String, Object> headers = new HashMap<>();
-    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
-
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("path", "/invites/test-id/rsvp");
-    payload.put("httpMethod", "POST");
-    payload.put("headers", headers);
-
-    Response response = invokeLambda(payload);
-    assertEquals("RSVP endpoint should be routable", 200, response.code());
+    // Use a fake invite ID — we expect 404 (invite not found), not 401 (unauth) or 5xx (crash)
+    Response response = invoke("POST", "/invites/smoke-test-invite/rsvp", authHeaders(), "{\"status\":\"yes\"}");
+    int status = response.code();
+    assertNotEquals("RSVP endpoint should not reject auth", 401, status);
+    assertTrue("RSVP endpoint should not crash", status < 500);
   }
 
   @Test
@@ -95,73 +70,56 @@ public class LambdaDeploymentSmokeTest {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
     Assume.assumeNotNull("Firebase token required for testing", FIREBASE_TOKEN);
 
-    Map<String, Object> headers = new HashMap<>();
-    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
-
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("path", "/push-tokens");
-    payload.put("httpMethod", "POST");
-    payload.put("headers", headers);
-
-    Response response = invokeLambda(payload);
+    String body = gson.toJson(Map.of("token", "smoke-test-fcm-token-placeholder", "platform", "ios"));
+    Response response = invoke("POST", "/push-tokens", authHeaders(), body);
     assertEquals("Push tokens endpoint should be routable", 201, response.code());
   }
 
   @Test
-  public void testWeeklyJobEndpointRouting() throws Exception {
+  public void testWeeklyJobEndpointRequiresAuth() throws Exception {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
 
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("path", "/weekly-job");
-    payload.put("httpMethod", "POST");
-
-    Response response = invokeLambda(payload);
-    assertEquals("Weekly job endpoint should be routable", 200, response.code());
+    // Weekly job HTTP endpoint requires auth — verify it rejects unauthenticated requests
+    Response response = invoke("POST", "/weekly-job", new HashMap<>(), null);
+    assertEquals("Weekly job endpoint should require auth", 401, response.code());
   }
 
   @Test
   public void testInvalidPathReturns404() throws Exception {
     Assume.assumeNotNull("Lambda endpoint must be configured", LAMBDA_ENDPOINT);
 
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("path", "/invalid-path");
-    payload.put("httpMethod", "GET");
-
-    Response response = invokeLambda(payload);
+    Response response = invoke("GET", "/invalid-path", new HashMap<>(), null);
     assertEquals("Invalid path should return 404", 404, response.code());
   }
 
-  private Response invokeLambda(Map<String, Object> payload) throws Exception {
-    String path = (String) payload.getOrDefault("path", "/");
-    String method = (String) payload.getOrDefault("httpMethod", "GET");
-    Map<String, Object> headers = (Map<String, Object>) payload.getOrDefault("headers", new HashMap<>());
-    String body = (String) payload.getOrDefault("body", "");
+  private Map<String, Object> authHeaders() {
+    Map<String, Object> headers = new HashMap<>();
+    headers.put("Authorization", "Bearer " + FIREBASE_TOKEN);
+    return headers;
+  }
 
+  private Response invoke(String method, String path, Map<String, Object> headers, String bodyJson)
+      throws Exception {
     String url = LAMBDA_ENDPOINT + path;
+    Request.Builder builder = new Request.Builder().url(url);
 
-    Request.Builder requestBuilder = new Request.Builder().url(url);
-
-    // Add headers
     for (Map.Entry<String, Object> entry : headers.entrySet()) {
-      requestBuilder.addHeader(entry.getKey(), entry.getValue().toString());
+      builder.addHeader(entry.getKey(), entry.getValue().toString());
     }
 
-    // Build request with appropriate method and body
+    String json = bodyJson != null ? bodyJson : "{}";
+    RequestBody requestBody = RequestBody.create(json, okhttp3.MediaType.get("application/json"));
+
     Request request;
-    if ("POST".equals(method)) {
-      RequestBody requestBody = RequestBody.create(
-        body.isEmpty() ? "{}" : body,
-        okhttp3.MediaType.get("application/json")
-      );
-      request = requestBuilder.post(requestBody).build();
-    } else if ("PATCH".equals(method)) {
-      RequestBody requestBody = RequestBody.create(
-        body.isEmpty() ? "{}" : body,
-        okhttp3.MediaType.get("application/json")
-      );
-      request = requestBuilder.patch(requestBody).build();
-    } else {
-      request = requestBuilder.get().build();
+    switch (method) {
+      case "POST":
+        request = builder.post(requestBody).build();
+        break;
+      case "PATCH":
+        request = builder.patch(requestBody).build();
+        break;
+      default:
+        request = builder.get().build();
     }
 
     return client.newCall(request).execute();
