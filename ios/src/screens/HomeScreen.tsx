@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient_methods } from '../services/api';
 
@@ -30,6 +31,7 @@ interface WeeklySpot {
 }
 
 const HomeScreen = () => {
+  const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const [feed, setFeed] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,13 @@ const HomeScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.weeklyTitle}>This Week's Spot</Text>
-        {user?.city && <Text style={styles.cityText}>Your city: {user.city}</Text>}
+        <TouchableOpacity
+          style={styles.cityPill}
+          onPress={() => navigation.navigate('ChangeCity')}
+        >
+          <Text style={styles.cityPillText}>{user?.city ?? 'Set city'}</Text>
+          <Text style={styles.cityPillChevron}> ›</Text>
+        </TouchableOpacity>
         <Text style={styles.date}>{feed?.current?.date}</Text>
       </View>
 
@@ -188,6 +196,25 @@ const styles = StyleSheet.create({
     color: '#6B4CE6',
     fontWeight: '600',
     marginBottom: 8,
+  },
+  cityPill: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: '#EDE9FE',
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  cityPillText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B4CE6',
+  },
+  cityPillChevron: {
+    fontSize: 16,
+    color: '#6B4CE6',
   },
   date: {
     fontSize: 14,
