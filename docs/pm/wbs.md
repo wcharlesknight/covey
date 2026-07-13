@@ -246,6 +246,36 @@
 
 ---
 
+### 1.8 Technical Debt and Hardening
+
+> Added 2026-07-12 from codebase review against AWS Lambda Java, Spring Boot layered-architecture, and React Native/Expo template standards.
+
+#### 1.8.1 Backend Hardening
+- [ ] 1.8.1.1 Stop logging full request event in `LambdaRouter` (Authorization headers currently written to CloudWatch); log method/path only
+- [ ] 1.8.1.2 Cache handler/service instances as static fields instead of constructing per request (Lambda execution-environment reuse)
+- [ ] 1.8.1.3 Replace raw `Map<String, Object>` events/responses with typed `APIGatewayProxyRequestEvent`/`APIGatewayProxyResponseEvent` (dependency already present); removes hand-rolled stage-prefix stripping and unchecked casts
+- [ ] 1.8.1.4 Centralize error responses in a shared util using Gson serialization and a consistent error schema (no hand-concatenated JSON strings)
+- [ ] 1.8.1.5 Adopt AWS Lambda Powertools for Java: structured JSON logging with correlation IDs, replacing `System.out`/`System.err`
+- [ ] 1.8.1.6 Refresh aging dependencies (firebase-admin 9.2.0, gson 2.10.1, grpc 1.55.1, OWASP dependency-check 8.4.2)
+- [ ] 1.8.1.7 Evaluate Java 21 Lambda runtime and Gradle Shadow plugin to replace custom `fatJar`/`mergeServiceFiles` tasks
+- [ ] 1.8.1.8 Enforce JaCoCo coverage threshold in CI (`jacocoTestCoverageVerification`)
+
+#### 1.8.2 iOS Hardening
+- [ ] 1.8.2.1 Fix Firebase Auth persistence: use `initializeAuth` with `getReactNativePersistence(AsyncStorage)` — sessions currently do not survive app restart (supports 1.4.1.5)
+- [ ] 1.8.2.2 Use cached `getIdToken()` instead of `getIdToken(true)` in the request interceptor (forced refresh adds a network round trip to every API call)
+- [ ] 1.8.2.3 Eliminate `any` types: typed API response models in `api.ts`, typed Firebase instances, typed navigation param lists (`RootStackParamList`)
+- [ ] 1.8.2.4 Remove client-side `ensureUserRecord` Firestore writes from `authStore` — backend `GET /me` now auto-provisions; keep one source of truth
+- [ ] 1.8.2.5 Replace raw `console.log` calls with a `__DEV__`-gated logger so nothing logs in production builds (supports 1.5.3.5)
+- [ ] 1.8.2.6 Enforce ESLint: remove `|| true` / `2>/dev/null` from lint scripts and `continue-on-error` from the CI lint step
+- [ ] 1.8.2.7 Remove Detox dependencies or add the missing Detox configuration (currently declared but unconfigured)
+
+#### 1.8.3 CI/CD and Repo Hygiene
+- [ ] 1.8.3.1 Bump CI Node 18 → 20+ in `test.yml` and `deploy-nonprod.yml` (Expo SDK 54 requires newer Node; CI will fail after SDK upgrade merges)
+- [ ] 1.8.3.2 Add missing `.commitlintrc.json` or remove the commitlint job; remove `continue-on-error` from the TruffleHog secrets scan
+- [ ] 1.8.3.3 Add Dependabot (or Renovate) config covering Gradle, npm, and GitHub Actions
+
+---
+
 ## Effort Estimates
 
 | WBS Item | Estimated Hours | Primary Resource |
@@ -269,6 +299,7 @@
 | 1.5 Integration and Testing | 20 | Engineer |
 | 1.6 Deployment and Launch | 12 | Engineer |
 | 1.7 Project Closure | 4 | Engineer |
-| **TOTAL** | **220 hours** | |
+| 1.8 Technical Debt and Hardening | 24 | Engineer |
+| **TOTAL** | **244 hours** | |
 
 > Note: 220 hours at ~15-20 hours/week (part-time solo) equals approximately 11-15 weeks, consistent with the 11-14 week schedule estimate.
