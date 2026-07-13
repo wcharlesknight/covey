@@ -14,7 +14,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
-import { initializeApiClient } from '../services/api';
+import { initializeApiClient, apiClient_methods } from '../services/api';
 import { getFirestoreInstance } from '../services/firebase';
 
 interface User {
@@ -84,15 +84,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await initializeApiClient();
 
       // Set up auth state listener
-      onAuthStateChanged(auth, (firebaseUser) => {
+      onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
+          let city: string | null = null;
+          try {
+            const response = await apiClient_methods.getUser();
+            city = response.data.city || null;
+          } catch (e) {
+            console.warn('Could not fetch user profile on auth change:', e);
+          }
           set({
             user: {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              city: null,
+              city,
             },
             isInitializing: false,
             error: null,
@@ -214,7 +221,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const auth = getAuth();
-      const provider = new GoogleAuthProvider();
       const credential = GoogleAuthProvider.credential(idToken, accessToken);
 
       const userCredential = await signInWithCredential(auth, credential);

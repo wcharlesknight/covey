@@ -31,7 +31,7 @@ const OnboardingStack = () => (
   </Stack.Navigator>
 );
 
-const AppStack = () => (
+const AppTabs = () => (
   <Tab.Navigator
     screenOptions={{
       headerShown: true,
@@ -41,21 +41,21 @@ const AppStack = () => (
       },
     }}
   >
-    <Tab.Screen
-      name="Home"
-      component={HomeScreen}
-      options={{
-        title: 'Weekly Spot',
-      }}
-    />
-    <Tab.Screen
-      name="Profile"
-      component={ProfileScreen}
-      options={{
-        title: 'Profile',
-      }}
-    />
+    <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Weekly Spot' }} />
+    <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
   </Tab.Navigator>
+);
+
+// Root stack wraps tabs + CityPicker modal so city can be changed from Profile
+const AppStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false }} />
+    <Stack.Screen
+      name="ChangeCity"
+      component={CityPickerScreen}
+      options={{ title: 'Change City', presentation: 'modal' }}
+    />
+  </Stack.Navigator>
 );
 
 export default function App() {
@@ -64,9 +64,7 @@ export default function App() {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        // Initialize Firebase
         await initializeFirebase();
-        // Initialize auth state
         await initializeAuth();
       } catch (e) {
         console.error('Failed to initialize app:', e);
@@ -79,7 +77,7 @@ export default function App() {
   }, [initializeAuth]);
 
   if (isInitializing) {
-    return null; // Splash screen still visible
+    return null;
   }
 
   const hasCity = user?.city && user.city.length > 0;
