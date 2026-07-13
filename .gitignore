@@ -17,6 +17,7 @@ ios/*.xcworkspace
 ios/DerivedData/
 ios/.swiftpm/
 ios/Package.resolved
+ios/.expo/
 
 # Environment & Secrets (NEVER commit these)
 .env
