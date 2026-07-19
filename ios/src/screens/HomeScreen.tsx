@@ -66,12 +66,15 @@ const RSVP_OPTIONS: { status: 'yes' | 'no' | 'interested'; label: string }[] = [
   { status: 'no', label: 'Skip' },
 ];
 
+const RSVP_LABEL: Record<string, string> = { yes: 'Going', interested: 'Maybe', no: 'Skip' };
+
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const [feed, setFeed] = useState<Feed | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,12 +99,29 @@ const HomeScreen = () => {
     loadFeed();
   }, []);
 
-  const handleRsvp = async (inviteId: string, status: 'yes' | 'no' | 'interested') => {
+  const handleRsvp = async (inviteId: string, newStatus: 'yes' | 'no' | 'interested') => {
+    if (!feed?.current || rsvpSubmitting) return;
+
+    const prev = feed.current;
+    const prevRsvp = prev.userRsvp;
+    if (prevRsvp === newStatus) return;
+
+    // Optimistic update
+    const newCounts = { ...prev.rsvpCounts };
+    if (prevRsvp) newCounts[prevRsvp] = Math.max(0, newCounts[prevRsvp] - 1);
+    newCounts[newStatus] += 1;
+
+    setFeed(f => f ? { ...f, current: { ...prev, userRsvp: newStatus, rsvpCounts: newCounts } } : f);
+    setRsvpSubmitting(true);
+
     try {
-      await apiClient_methods.submitRsvp(inviteId, status);
-      loadFeed();
+      await apiClient_methods.submitRsvp(inviteId, newStatus);
     } catch (err: any) {
+      // Revert on failure
+      setFeed(f => f ? { ...f, current: prev } : f);
       Alert.alert('Error', err.response?.data?.error || 'Failed to submit RSVP');
+    } finally {
+      setRsvpSubmitting(false);
     }
   };
 
@@ -189,8 +209,10 @@ const HomeScreen = () => {
                   style={[
                     styles.rsvpButton,
                     feed.current!.userRsvp === status && styles.rsvpButtonActive,
+                    rsvpSubmitting && styles.rsvpButtonDisabled,
                   ]}
                   onPress={() => handleRsvp(feed.current!.id, status)}
+                  disabled={rsvpSubmitting}
                 >
                   <Text
                     style={[
@@ -239,6 +261,14 @@ const HomeScreen = () => {
                 <Text style={styles.historyRsvpItem}>
                   {spot.rsvpCounts?.no ?? 0} skip
                 </Text>
+                {spot.userRsvp ? (
+                  <>
+                    <Text style={styles.historyRsvpDot}>·</Text>
+                    <Text style={styles.historyUserRsvp}>
+                      You: {RSVP_LABEL[spot.userRsvp]}
+                    </Text>
+                  </>
+                ) : null}
               </View>
             </View>
           ))}
@@ -369,6 +399,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#6B4CE6',
     borderColor: '#6B4CE6',
   },
+  rsvpButtonDisabled: {
+    opacity: 0.6,
+  },
   rsvpButtonText: {
     fontSize: 14,
     fontWeight: '600',
@@ -447,6 +480,11 @@ const styles = StyleSheet.create({
   historyRsvpDot: {
     fontSize: 12,
     color: '#D1D5DB',
+  },
+  historyUserRsvp: {
+    fontSize: 12,
+    color: '#6B4CE6',
+    fontWeight: '600',
   },
   errorText: {
     fontSize: 16,
