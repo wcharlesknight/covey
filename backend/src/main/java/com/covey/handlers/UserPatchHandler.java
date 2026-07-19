@@ -10,11 +10,17 @@ import com.covey.services.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class UserPatchHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
+  private static final List<String> VALID_CITIES = Arrays.asList(
+    "Seattle", "Tacoma", "Bainbridge Island"
+  );
+
   private final AuthMiddleware authMiddleware;
   private final UserService userService;
   private final Gson gson;
@@ -55,7 +61,11 @@ public class UserPatchHandler implements RequestHandler<Map<String, Object>, Map
         user.setEmail(updateData.get("email").getAsString());
       }
       if (updateData.has("city") && updateData.get("city").isJsonPrimitive()) {
-        user.setCity(updateData.get("city").getAsString());
+        String city = updateData.get("city").getAsString();
+        if (!VALID_CITIES.contains(city)) {
+          return error(400, "Invalid city");
+        }
+        user.setCity(city);
       }
 
       userService.saveUser(user);

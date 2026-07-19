@@ -44,11 +44,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
   initializeAuth: async () => {
     try {
       const auth = getAuthInstance();
-
-      // Initialize API client
       await initializeApiClient();
 
-      // Set up auth state listener
       onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           let city: string | null = null;
@@ -67,12 +64,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
               city,
             },
             isInitializing: false,
+            isLoading: false,
             error: null,
           });
         } else {
           set({
             user: null,
             isInitializing: false,
+            isLoading: false,
           });
         }
       });
@@ -80,6 +79,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({
         error: error.message,
         isInitializing: false,
+        isLoading: false,
       });
     }
   },
@@ -89,26 +89,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const auth = getAuthInstance();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
       if (displayName) {
         await updateProfile(userCredential.user, { displayName });
       }
-
-      set({
-        user: {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
-          city: null,
-        },
-        isLoading: false,
-      });
+      // onAuthStateChanged fires next and sets user + isLoading: false
     } catch (error: any) {
-      set({
-        error: error.message || 'Failed to sign up',
-        isLoading: false,
-      });
+      set({ error: error.message || 'Failed to sign up', isLoading: false });
       throw error;
     }
   },
@@ -117,23 +103,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const auth = getAuthInstance();
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-      set({
-        user: {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
-          city: null,
-        },
-        isLoading: false,
-      });
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged fires next and sets user + isLoading: false
     } catch (error: any) {
-      set({
-        error: error.message || 'Failed to sign in',
-        isLoading: false,
-      });
+      set({ error: error.message || 'Failed to sign in', isLoading: false });
       throw error;
     }
   },
@@ -147,31 +120,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-
       const auth = getAuthInstance();
       const provider = new OAuthProvider('apple.com');
       const authCredential = provider.credential({
         idToken: credential.identityToken as string,
         rawNonce: (credential as any).nonce,
       });
-
-      const userCredential = await signInWithCredential(auth, authCredential);
-
-      set({
-        user: {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
-          city: null,
-        },
-        isLoading: false,
-      });
+      await signInWithCredential(auth, authCredential);
+      // onAuthStateChanged fires next and sets user + isLoading: false
     } catch (error: any) {
-      set({
-        error: error.message || 'Failed to sign in with Apple',
-        isLoading: false,
-      });
+      set({ error: error.message || 'Failed to sign in with Apple', isLoading: false });
       throw error;
     }
   },
@@ -181,24 +139,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const auth = getAuthInstance();
       const credential = GoogleAuthProvider.credential(idToken, accessToken);
-
-      const userCredential = await signInWithCredential(auth, credential);
-
-      set({
-        user: {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
-          city: null,
-        },
-        isLoading: false,
-      });
+      await signInWithCredential(auth, credential);
+      // onAuthStateChanged fires next and sets user + isLoading: false
     } catch (error: any) {
-      set({
-        error: error.message || 'Failed to sign in with Google',
-        isLoading: false,
-      });
+      set({ error: error.message || 'Failed to sign in with Google', isLoading: false });
       throw error;
     }
   },
@@ -208,15 +152,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const auth = getAuthInstance();
       await signOut(auth);
-      set({
-        user: null,
-        isLoading: false,
-      });
+      set({ user: null, isLoading: false });
     } catch (error: any) {
-      set({
-        error: error.message || 'Failed to sign out',
-        isLoading: false,
-      });
+      set({ error: error.message || 'Failed to sign out', isLoading: false });
       throw error;
     }
   },

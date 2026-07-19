@@ -3,13 +3,13 @@
 ## 📍 Quick Status
 
 **Current WBS:** 1.4 iOS Implementation — in progress  
-**Status:** ✅ SDK 54 upgrade complete — app verified working on device  
-**Latest Branch:** `feature/sdk54-upgrade` (PR #49 open — ready to merge)  
-**Latest Session:** 2026-07-19 - SDK 54 build unblocked and fully working on device
+**Status:** ✅ Feed screen complete — PR #51 ready to merge  
+**Latest Branch:** `feature/feed-screen-details` (PR #51 open)  
+**Latest Session:** 2026-07-19 - Feed details, city list, sign-in flash fix
 
 ### ⚠️ How to Resume Next Session
-1. Merge PR #49 (`feature/sdk54-upgrade`)
-2. Start next WBS items (see list below)
+1. Merge PR #51 (`feature/feed-screen-details`) if not done
+2. Next: 1.4.1.7 sign-out cleanup, then 1.4.4.3–4 RSVP UX, then 1.4.5 push notifications
 3. `cd ios && npx expo run:ios` to build
 
 ### WBS 1.4.2 City Selection — COMPLETE (2026-07-12, PR #48 merged)
@@ -34,10 +34,21 @@
 - ✅ Removed redundant `ensureUserRecord` — Lambda `GET /me` owns user doc creation via Admin SDK
 - ✅ Verified end-to-end on device: auth, Firestore, feed all working
 
-### Next iOS WBS Items (after Xcode unblocked)
-- 1.4.1.5: Store Firebase ID token securely in Keychain (currently AsyncStorage)
+### WBS 1.4.3 Feed Screen — COMPLETE (2026-07-19, PR #51)
+- ✅ 1.4.3.3: Maps link on address row, description field if present
+- ✅ 1.4.3.4: RSVP counts (Going/Maybe/Skip) on current spot
+- ✅ 1.4.3.5: History cards with address and RSVP counts
+- ✅ 1.4.3.6: Pull-to-refresh via RefreshControl
+- ✅ 1.4.3.7: Empty state card when no spot selected yet this week
+- ✅ City list restricted to Seattle, Tacoma, Bainbridge Island (iOS + backend)
+- ✅ Fixed CityPicker flash on sign-in for users with city already set
+
+### WBS 1.4.1 Auth — COMPLETE (2026-07-19)
+- ✅ 1.4.1.5: Firebase auth persistence via AsyncStorage (PR #50)
+- ✅ 1.4.1.6: Session restoration on app launch
+
+### Next iOS WBS Items
 - 1.4.1.7: Sign-out flow cleanup (clear storage, revoke Firebase session)
-- 1.4.3.3–1.4.3.7: Feed screen details (venue address, RSVP counts, history, pull-to-refresh, empty state)
 - 1.4.4.3–1.4.4.4: RSVP UX (optimistic updates, disable for past weeks)
 - 1.4.5: Push notification handling (permission prompt, FCM registration, tap deep link)
 
