@@ -36,7 +36,9 @@ public class GooglePlacesClient {
     JsonObject json = JsonParser.parseString(response).getAsJsonObject();
 
     if (!json.get("status").getAsString().equals("OK")) {
-      throw new Exception("Google Places API error: " + json.get("status").getAsString());
+      String status = json.get("status").getAsString();
+      String detail = json.has("error_message") ? json.get("error_message").getAsString() : "no detail";
+      throw new Exception("Google Places API error: " + status + " — " + detail);
     }
 
     JsonArray results_array = json.getAsJsonArray("results");
