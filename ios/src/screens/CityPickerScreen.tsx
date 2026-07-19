@@ -15,11 +15,7 @@ import { apiClient_methods } from '../services/api';
 const CITIES = [
   'Seattle',
   'Tacoma',
-  'Bellevue',
-  'Renton',
-  'Kirkland',
-  'Redmond',
-  'Sammamish',
+  'Bainbridge Island',
 ];
 
 export default function CityPickerScreen() {

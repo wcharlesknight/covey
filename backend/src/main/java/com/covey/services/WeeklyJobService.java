@@ -31,12 +31,12 @@ public class WeeklyJobService {
   private final VenueRotationService rotationService;
   private final InviteBatchService inviteBatchService;
 
-  // City coordinates (Seattle and Tacoma)
   private static final Map<String, double[]> CITY_COORDS = new HashMap<>();
 
   static {
     CITY_COORDS.put("Seattle", new double[]{47.6062, -122.3321});
     CITY_COORDS.put("Tacoma", new double[]{47.2529, -122.4443});
+    CITY_COORDS.put("Bainbridge Island", new double[]{47.6262, -122.5209});
   }
 
   public WeeklyJobService(GooglePlacesClient placesClient) {
