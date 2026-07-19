@@ -44,7 +44,9 @@
         {
           "isModal": false
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

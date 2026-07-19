@@ -2,10 +2,44 @@
 
 ## 📍 Quick Status
 
-**Current WBS:** 1.4 iOS Implementation  
-**Status:** ✅ Backend COMPLETE — all APIs deployed, smoke tests passing, Postman environment set up  
-**Latest Branch:** `feature/user-auto-provisioning` (PR #46 open — merge before starting iOS)  
-**Latest Session:** 2026-07-12 - User auto-provisioning, DEPLOYMENT.md updated, Postman configured
+**Current WBS:** 1.4 iOS Implementation — in progress  
+**Status:** ✅ SDK 54 upgrade complete — app verified working on device  
+**Latest Branch:** `feature/sdk54-upgrade` (PR #49 open — ready to merge)  
+**Latest Session:** 2026-07-19 - SDK 54 build unblocked and fully working on device
+
+### ⚠️ How to Resume Next Session
+1. Merge PR #49 (`feature/sdk54-upgrade`)
+2. Start next WBS items (see list below)
+3. `cd ios && npx expo run:ios` to build
+
+### WBS 1.4.2 City Selection — COMPLETE (2026-07-12, PR #48 merged)
+- ✅ CityPickerScreen pre-selects current city when changing
+- ✅ `authStore` fetches city from `GET /me` on auth state change — returning users skip CityPickerScreen
+- ✅ App.tsx restructured: CityPickerScreen accessible as modal from main app
+- ✅ ProfileScreen: tappable city settings row with chevron
+- ✅ HomeScreen: tappable city pill (purple, top of feed) navigates to ChangeCity
+- ✅ Cancel button on CityPickerScreen when in change mode
+
+### SDK 54 Upgrade — COMPLETE (2026-07-19, PR #49 ready to merge)
+- ✅ All package versions updated (RN 0.74 → 0.81, React 18 → 19, expo ^51 → ^54)
+- ✅ `@react-native-community/cli` added (required for RN 0.81 autolinking)
+- ✅ Native iOS project regenerated via `expo prebuild --clean --platform ios`
+- ✅ AppDelegate migrated from Obj-C (.mm) to Swift (.swift)
+- ✅ Xcode 26.3 installed (unblocked RN 0.81 requirement)
+- ✅ Xcode 26 actool fix: SplashScreenLegacy image@2x/3x placeholders replaced with valid PNGs
+- ✅ Metro config: `unstable_enablePackageExports = false` to fix Firebase split-module bug
+- ✅ Firebase imports changed to `@firebase/app`, `@firebase/auth`, `@firebase/firestore` (uses react-native field)
+- ✅ `initializeAuth` replaces `getAuth` to avoid PUBLIC component registration race
+- ✅ Firestore rules: split `write` into `create` + `update` to fix null `resource` on new docs
+- ✅ Removed redundant `ensureUserRecord` — Lambda `GET /me` owns user doc creation via Admin SDK
+- ✅ Verified end-to-end on device: auth, Firestore, feed all working
+
+### Next iOS WBS Items (after Xcode unblocked)
+- 1.4.1.5: Store Firebase ID token securely in Keychain (currently AsyncStorage)
+- 1.4.1.7: Sign-out flow cleanup (clear storage, revoke Firebase session)
+- 1.4.3.3–1.4.3.7: Feed screen details (venue address, RSVP counts, history, pull-to-refresh, empty state)
+- 1.4.4.3–1.4.4.4: RSVP UX (optimistic updates, disable for past weeks)
+- 1.4.5: Push notification handling (permission prompt, FCM registration, tap deep link)
 
 ### WBS 1.3.9 Partially Complete (2026-07-12)
 - ✅ Smoke test token generation documented (Firebase custom token → ID token via REST exchange)

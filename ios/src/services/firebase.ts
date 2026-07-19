@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeApp } from '@firebase/app';
+import { initializeAuth } from '@firebase/auth';
+import { getFirestore } from '@firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -21,7 +21,7 @@ export const initializeFirebase = async () => {
   }
 
   app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  auth = initializeAuth(app);
   db = getFirestore(app);
 
   // Enable emulator in development (optional)

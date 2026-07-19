@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import {
-  getAuth,
   signInWithCredential,
   OAuthProvider,
   GoogleAuthProvider,
@@ -9,13 +8,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+} from '@firebase/auth';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
-import * as SecureStore from 'expo-secure-store';
 import { initializeApiClient, apiClient_methods } from '../services/api';
-import { getFirestoreInstance } from '../services/firebase';
+import { getAuthInstance } from '../services/firebase';
 
 interface User {
   uid: string;
@@ -39,38 +35,7 @@ interface AuthStore {
   clearError: () => void;
 }
 
-const ensureUserRecord = async (firebaseUser: any) => {
-  if (!firebaseUser) return;
-
-  try {
-    const db = getFirestoreInstance();
-    if (!db) {
-      console.warn('Firestore not initialized yet, skipping user record creation');
-      return;
-    }
-
-    const userRef = doc(db, 'users', firebaseUser.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName || '',
-        photoURL: firebaseUser.photoURL || '',
-        city: '',
-        createdAt: new Date().toISOString(),
-      });
-      console.log('✅ Created user record in Firestore:', firebaseUser.uid);
-    } else {
-      console.log('✅ User record already exists:', firebaseUser.uid);
-    }
-  } catch (error) {
-    console.error('Failed to create user record:', error);
-  }
-};
-
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   isInitializing: true,
   isLoading: false,
@@ -78,7 +43,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   initializeAuth: async () => {
     try {
-      const auth = getAuth();
+      const auth = getAuthInstance();
 
       // Initialize API client
       await initializeApiClient();
@@ -122,14 +87,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signUpWithEmail: async (email: string, password: string, displayName: string) => {
     set({ isLoading: true, error: null });
     try {
-      const auth = getAuth();
+      const auth = getAuthInstance();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
       if (displayName) {
         await updateProfile(userCredential.user, { displayName });
       }
-
-      await ensureUserRecord(userCredential.user);
 
       set({
         user: {
@@ -153,10 +116,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signInWithEmail: async (email: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
-      const auth = getAuth();
+      const auth = getAuthInstance();
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-      await ensureUserRecord(userCredential.user);
 
       set({
         user: {
@@ -187,7 +148,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         ],
       });
 
-      const auth = getAuth();
+      const auth = getAuthInstance();
       const provider = new OAuthProvider('apple.com');
       const authCredential = provider.credential({
         idToken: credential.identityToken as string,
@@ -195,8 +156,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
 
       const userCredential = await signInWithCredential(auth, authCredential);
-
-      await ensureUserRecord(userCredential.user);
 
       set({
         user: {
@@ -220,12 +179,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signInWithGoogle: async (idToken: string, accessToken: string) => {
     set({ isLoading: true, error: null });
     try {
-      const auth = getAuth();
+      const auth = getAuthInstance();
       const credential = GoogleAuthProvider.credential(idToken, accessToken);
 
       const userCredential = await signInWithCredential(auth, credential);
-
-      await ensureUserRecord(userCredential.user);
 
       set({
         user: {
@@ -249,7 +206,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signOut: async () => {
     set({ isLoading: true, error: null });
     try {
-      const auth = getAuth();
+      const auth = getAuthInstance();
       await signOut(auth);
       set({
         user: null,
