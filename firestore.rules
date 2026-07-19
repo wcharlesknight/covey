@@ -39,11 +39,11 @@ service cloud.firestore {
     // User profiles: user can read/write own, job service can read all
     match /users/{userId} {
       allow read: if isAuthenticated() && isOwner(userId);
-      allow write: if isOwner(userId) &&
-                      // Prevent changing immutable fields
-                      isUnchanged('uid') &&
-                      isUnchanged('createdAt');
-      allow read: if isJobService(); // Job service can read all for context
+      allow read: if isJobService();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) &&
+                       isUnchanged('uid') &&
+                       isUnchanged('createdAt');
     }
 
     // ============================================

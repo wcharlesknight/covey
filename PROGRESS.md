@@ -3,16 +3,14 @@
 ## 📍 Quick Status
 
 **Current WBS:** 1.4 iOS Implementation — in progress  
-**Status:** 🟡 BLOCKED on Xcode 16.1 — update Xcode via App Store to unblock, then resume  
-**Latest Branch:** `feature/sdk54-upgrade` (PR #49 open — do NOT merge until Xcode 16.1 installed and build verified)  
-**Latest Session:** 2026-07-12 - SDK 54 upgrade, city selection complete, Xcode version blocker hit
+**Status:** ✅ SDK 54 upgrade complete — app verified working on device  
+**Latest Branch:** `feature/sdk54-upgrade` (PR #49 open — ready to merge)  
+**Latest Session:** 2026-07-19 - SDK 54 build unblocked and fully working on device
 
 ### ⚠️ How to Resume Next Session
-1. Update Xcode to 16.1+ via App Store (requires no macOS upgrade — Sonoma 14.5+ is sufficient)
-2. `cd ios && npx expo run:ios` — should now succeed
-3. Verify app launches on simulator and Expo Go on device
-4. Merge PR #49 once build is confirmed working
-5. Continue with next iOS WBS items (see below)
+1. Merge PR #49 (`feature/sdk54-upgrade`)
+2. Start next WBS items (see list below)
+3. `cd ios && npx expo run:ios` to build
 
 ### WBS 1.4.2 City Selection — COMPLETE (2026-07-12, PR #48 merged)
 - ✅ CityPickerScreen pre-selects current city when changing
@@ -22,12 +20,19 @@
 - ✅ HomeScreen: tappable city pill (purple, top of feed) navigates to ChangeCity
 - ✅ Cancel button on CityPickerScreen when in change mode
 
-### SDK 54 Upgrade — IN PROGRESS (PR #49 open, blocked)
+### SDK 54 Upgrade — COMPLETE (2026-07-19, PR #49 ready to merge)
 - ✅ All package versions updated (RN 0.74 → 0.81, React 18 → 19, expo ^51 → ^54)
 - ✅ `@react-native-community/cli` added (required for RN 0.81 autolinking)
 - ✅ Native iOS project regenerated via `expo prebuild --clean --platform ios`
 - ✅ AppDelegate migrated from Obj-C (.mm) to Swift (.swift)
-- ❌ BLOCKED: RN 0.81 requires Xcode 16.1 — user has 16.0. Fix: App Store → update Xcode
+- ✅ Xcode 26.3 installed (unblocked RN 0.81 requirement)
+- ✅ Xcode 26 actool fix: SplashScreenLegacy image@2x/3x placeholders replaced with valid PNGs
+- ✅ Metro config: `unstable_enablePackageExports = false` to fix Firebase split-module bug
+- ✅ Firebase imports changed to `@firebase/app`, `@firebase/auth`, `@firebase/firestore` (uses react-native field)
+- ✅ `initializeAuth` replaces `getAuth` to avoid PUBLIC component registration race
+- ✅ Firestore rules: split `write` into `create` + `update` to fix null `resource` on new docs
+- ✅ Removed redundant `ensureUserRecord` — Lambda `GET /me` owns user doc creation via Admin SDK
+- ✅ Verified end-to-end on device: auth, Firestore, feed all working
 
 ### Next iOS WBS Items (after Xcode unblocked)
 - 1.4.1.5: Store Firebase ID token securely in Keychain (currently AsyncStorage)
