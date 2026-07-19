@@ -65,12 +65,17 @@ jobs:
             --function-name covey-weekly-spot-dev \
             --region ${{ env.AWS_REGION }}
 
-      - name: Configure Lambda runtime and handler
+      - name: Configure Lambda runtime, handler and environment
         run: |
           aws lambda update-function-configuration \
             --function-name covey-weekly-spot-dev \
             --runtime java17 \
             --handler com.covey.LambdaRouter::handleRequest \
+            --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-dev}" \
+            --region ${{ env.AWS_REGION }}
+
+          aws lambda wait function-updated \
+            --function-name covey-weekly-spot-dev \
             --region ${{ env.AWS_REGION }}
 
       - name: Verify Lambda deployment
