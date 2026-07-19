@@ -46,10 +46,6 @@ const ProfileScreen = () => {
           <Text style={styles.value}>{user?.email || 'Not set'}</Text>
         </View>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>User ID</Text>
-          <Text style={[styles.value, styles.monoFont]}>{user?.uid}</Text>
-        </View>
       </View>
 
       <TouchableOpacity
@@ -111,10 +107,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1F2937',
     fontWeight: '500',
-  },
-  monoFont: {
-    fontFamily: 'Courier New',
-    fontSize: 12,
   },
   settingsRow: {
     flexDirection: 'row',

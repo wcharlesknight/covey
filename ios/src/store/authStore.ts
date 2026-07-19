@@ -152,7 +152,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const auth = getAuthInstance();
       await signOut(auth);
-      set({ user: null, isLoading: false });
+      // onAuthStateChanged fires next and sets user: null + isLoading: false
     } catch (error: any) {
       set({ error: error.message || 'Failed to sign out', isLoading: false });
       throw error;
