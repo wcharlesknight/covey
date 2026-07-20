@@ -6,18 +6,21 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GooglePlacesClient {
-  private static final String BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+  private static final String BASE_URL = "https://places.googleapis.com/v1/places:searchNearby";
   private static final int RADIUS = 5000;
-  private static final String TYPE = "bar";
+  private static final String INCLUDED_TYPE = "bar";
   private static final double MIN_RATING = 4.0;
   private static final int MIN_REVIEWS = 50;
+  private static final String FIELD_MASK =
+      "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.location";
 
   private final String apiKey;
 
@@ -27,83 +30,94 @@ public class GooglePlacesClient {
 
   public List<WeeklySpot> searchVenues(String city, double latitude, double longitude)
       throws Exception {
-    String url = String.format(
-        "%s?location=%f,%f&radius=%d&type=%s&key=%s",
-        BASE_URL, latitude, longitude, RADIUS, TYPE, apiKey);
-
-    List<WeeklySpot> results = new ArrayList<>();
-    String response = fetchUrl(url);
+    String requestBody = buildRequestBody(latitude, longitude);
+    String response = postJson(BASE_URL, requestBody);
     JsonObject json = JsonParser.parseString(response).getAsJsonObject();
 
-    if (!json.get("status").getAsString().equals("OK")) {
-      String status = json.get("status").getAsString();
-      String detail = json.has("error_message") ? json.get("error_message").getAsString() : "no detail";
-      throw new Exception("Google Places API error: " + status + " — " + detail);
+    if (json.has("error")) {
+      JsonObject error = json.getAsJsonObject("error");
+      String status = error.has("status") ? error.get("status").getAsString() : "UNKNOWN";
+      String message = error.has("message") ? error.get("message").getAsString() : "no detail";
+      throw new Exception("Google Places API error: " + status + " — " + message);
     }
 
-    JsonArray results_array = json.getAsJsonArray("results");
-    for (int i = 0; i < results_array.size(); i++) {
-      JsonObject place = results_array.get(i).getAsJsonObject();
+    List<WeeklySpot> results = new ArrayList<>();
+
+    if (!json.has("places")) {
+      return results;
+    }
+
+    JsonArray places = json.getAsJsonArray("places");
+    for (int i = 0; i < places.size(); i++) {
+      JsonObject place = places.get(i).getAsJsonObject();
 
       double rating = place.has("rating") ? place.get("rating").getAsDouble() : 0.0;
-      int review_count = place.has("user_ratings_total")
-          ? place.get("user_ratings_total").getAsInt()
+      int reviewCount = place.has("userRatingCount")
+          ? place.get("userRatingCount").getAsInt()
           : 0;
 
-      if (rating >= MIN_RATING && review_count >= MIN_REVIEWS) {
-        String name = place.get("name").getAsString();
-        String address = place.get("vicinity").getAsString();
-        String placeId = place.get("place_id").getAsString();
+      if (rating >= MIN_RATING && reviewCount >= MIN_REVIEWS) {
+        String name = place.getAsJsonObject("displayName").get("text").getAsString();
+        String address = place.has("formattedAddress")
+            ? place.get("formattedAddress").getAsString()
+            : "";
+        String placeId = place.get("id").getAsString();
 
-        WeeklySpot spot = new WeeklySpot(city, name, address, placeId, rating, review_count,
+        WeeklySpot spot = new WeeklySpot(city, name, address, placeId, rating, reviewCount,
             System.currentTimeMillis());
         results.add(spot);
       }
     }
 
-    // Sort by rating DESC, then review count DESC (highest rated, most reviewed first)
     results.sort((a, b) -> {
       int ratingCompare = Double.compare(b.getRating(), a.getRating());
-      if (ratingCompare != 0) {
-        return ratingCompare;
-      }
+      if (ratingCompare != 0) return ratingCompare;
       return Integer.compare(b.getReviewCount(), a.getReviewCount());
     });
 
     return results;
   }
 
-  /**
-   * Select the top-ranked venue from a list of candidates.
-   *
-   * Ranking: highest rating first, review count as tiebreaker.
-   */
   public WeeklySpot selectTopVenue(List<WeeklySpot> venues) {
-    if (venues == null || venues.isEmpty()) {
-      return null;
-    }
-    // Sort by rating DESC, then review count DESC
+    if (venues == null || venues.isEmpty()) return null;
     venues.sort((a, b) -> {
       int ratingCompare = Double.compare(b.getRating(), a.getRating());
-      if (ratingCompare != 0) {
-        return ratingCompare;
-      }
+      if (ratingCompare != 0) return ratingCompare;
       return Integer.compare(b.getReviewCount(), a.getReviewCount());
     });
     return venues.get(0);
   }
 
-  private String fetchUrl(String urlString) throws Exception {
-    URL url = new URL(urlString);
-    BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-    StringBuilder response = new StringBuilder();
-    String inputLine;
+  private String buildRequestBody(double latitude, double longitude) {
+    return String.format(
+        "{\"includedTypes\":[\"%s\"]," +
+        "\"maxResultCount\":20," +
+        "\"locationRestriction\":{\"circle\":{\"center\":{\"latitude\":%f,\"longitude\":%f},\"radius\":%d}}}",
+        INCLUDED_TYPE, latitude, longitude, RADIUS);
+  }
 
-    while ((inputLine = in.readLine()) != null) {
-      response.append(inputLine);
+  private String postJson(String urlString, String body) throws Exception {
+    URL url = new URL(urlString);
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setRequestMethod("POST");
+    conn.setRequestProperty("Content-Type", "application/json");
+    conn.setRequestProperty("X-Goog-Api-Key", apiKey);
+    conn.setRequestProperty("X-Goog-FieldMask", FIELD_MASK);
+    conn.setDoOutput(true);
+
+    try (OutputStream os = conn.getOutputStream()) {
+      os.write(body.getBytes(StandardCharsets.UTF_8));
     }
 
-    in.close();
+    int statusCode = conn.getResponseCode();
+    BufferedReader reader = new BufferedReader(new InputStreamReader(
+        statusCode >= 400 ? conn.getErrorStream() : conn.getInputStream()));
+    StringBuilder response = new StringBuilder();
+    String line;
+    while ((line = reader.readLine()) != null) {
+      response.append(line);
+    }
+    reader.close();
     return response.toString();
   }
 }
