@@ -1,13 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useAuthStore } from './src/store/authStore';
 import { initializeFirebase } from './src/services/firebase';
+import {
+  requestPermissionAndRegister,
+  addTokenRefreshListener,
+  addForegroundListener,
+  addTapListener,
+} from './src/services/notifications';
 
 import SignInScreen from './src/screens/SignInScreen';
 import CityPickerScreen from './src/screens/CityPickerScreen';
@@ -60,6 +66,8 @@ const AppStack = () => (
 
 export default function App() {
   const { user, isInitializing, initializeAuth } = useAuthStore();
+  const navigationRef = useNavigationContainerRef<any>();
+  const notificationListenersRef = useRef<any[]>([]);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -76,6 +84,27 @@ export default function App() {
     bootstrap();
   }, [initializeAuth]);
 
+  // Register for push notifications once user is fully onboarded
+  useEffect(() => {
+    const hasCity = user?.city && user.city.length > 0;
+    if (!user || !hasCity) return;
+
+    requestPermissionAndRegister();
+
+    const listeners = [
+      addTokenRefreshListener(),
+      addForegroundListener(),
+      addTapListener(() => {
+        navigationRef.current?.navigate('Tabs', { screen: 'Home' });
+      }),
+    ];
+    notificationListenersRef.current = listeners;
+
+    return () => {
+      listeners.forEach(l => l.remove());
+    };
+  }, [user?.uid, user?.city]);
+
   if (isInitializing) {
     return null;
   }
@@ -84,7 +113,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         {!user ? (
           <AuthStack />
         ) : !hasCity ? (
