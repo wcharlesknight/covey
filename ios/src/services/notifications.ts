@@ -38,10 +38,14 @@ export async function requestPermissionAndRegister(): Promise<void> {
   }
 
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: '36924851-085c-4e48-8e07-94098d4b6b7b',
+    });
+    console.log('Push token obtained:', tokenData.data);
     await apiClient_methods.registerPushToken(tokenData.data);
+    console.log('Push token registered with backend');
   } catch (e) {
-    console.warn('Failed to register push token:', e);
+    console.error('Failed to register push token:', e);
   }
 }
 
