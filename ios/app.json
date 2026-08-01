@@ -16,15 +16,18 @@
       "**/*"
     ],
     "ios": {
-      "bundleIdentifier": "com.covey.app",
-      "buildNumber": "1"
+      "bundleIdentifier": "com.covery.app",
+      "buildNumber": "1",
+      "entitlements": {
+        "aps-environment": "development"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6B4CE6"
       },
-      "package": "com.covey.app"
+      "package": "com.covery.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -53,6 +56,6 @@
         "projectId": "36924851-085c-4e48-8e07-94098d4b6b7b"
       }
     },
-    "owner": "williamchknight"
+    "owner": "williamcharlesknight"
   }
 }

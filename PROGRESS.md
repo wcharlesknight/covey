@@ -1,360 +1,96 @@
-# Covey Project Progress & Memory
+# Covey Project Progress
 
 ## 📍 Quick Status
 
-**Current WBS:** 1.4 iOS Implementation — in progress  
-**Status:** ✅ Feed screen complete — PR #51 ready to merge  
-**Latest Branch:** `feature/feed-screen-details` (PR #51 open)  
-**Latest Session:** 2026-07-19 - Feed details, city list, sign-in flash fix
+**Current Branch:** `feature/places-api-new` (PR #56 open, pending manual validation)  
+**Last Updated:** 2026-07-19  
+**Next Action:** Validate Places API (New) works by triggering weekly job manually, then merge PR #56
 
 ### ⚠️ How to Resume Next Session
-1. Merge PR #51 (`feature/feed-screen-details`) if not done
-2. Next: 1.4.1.7 sign-out cleanup, then 1.4.4.3–4 RSVP UX, then 1.4.5 push notifications
-3. `cd ios && npx expo run:ios` to build
-
-### WBS 1.4.2 City Selection — COMPLETE (2026-07-12, PR #48 merged)
-- ✅ CityPickerScreen pre-selects current city when changing
-- ✅ `authStore` fetches city from `GET /me` on auth state change — returning users skip CityPickerScreen
-- ✅ App.tsx restructured: CityPickerScreen accessible as modal from main app
-- ✅ ProfileScreen: tappable city settings row with chevron
-- ✅ HomeScreen: tappable city pill (purple, top of feed) navigates to ChangeCity
-- ✅ Cancel button on CityPickerScreen when in change mode
-
-### SDK 54 Upgrade — COMPLETE (2026-07-19, PR #49 ready to merge)
-- ✅ All package versions updated (RN 0.74 → 0.81, React 18 → 19, expo ^51 → ^54)
-- ✅ `@react-native-community/cli` added (required for RN 0.81 autolinking)
-- ✅ Native iOS project regenerated via `expo prebuild --clean --platform ios`
-- ✅ AppDelegate migrated from Obj-C (.mm) to Swift (.swift)
-- ✅ Xcode 26.3 installed (unblocked RN 0.81 requirement)
-- ✅ Xcode 26 actool fix: SplashScreenLegacy image@2x/3x placeholders replaced with valid PNGs
-- ✅ Metro config: `unstable_enablePackageExports = false` to fix Firebase split-module bug
-- ✅ Firebase imports changed to `@firebase/app`, `@firebase/auth`, `@firebase/firestore` (uses react-native field)
-- ✅ `initializeAuth` replaces `getAuth` to avoid PUBLIC component registration race
-- ✅ Firestore rules: split `write` into `create` + `update` to fix null `resource` on new docs
-- ✅ Removed redundant `ensureUserRecord` — Lambda `GET /me` owns user doc creation via Admin SDK
-- ✅ Verified end-to-end on device: auth, Firestore, feed all working
-
-### WBS 1.4.3 Feed Screen — COMPLETE (2026-07-19, PR #51)
-- ✅ 1.4.3.3: Maps link on address row, description field if present
-- ✅ 1.4.3.4: RSVP counts (Going/Maybe/Skip) on current spot
-- ✅ 1.4.3.5: History cards with address and RSVP counts
-- ✅ 1.4.3.6: Pull-to-refresh via RefreshControl
-- ✅ 1.4.3.7: Empty state card when no spot selected yet this week
-- ✅ City list restricted to Seattle, Tacoma, Bainbridge Island (iOS + backend)
-- ✅ Fixed CityPicker flash on sign-in for users with city already set
-
-### WBS 1.4.1 Auth — COMPLETE (2026-07-19)
-- ✅ 1.4.1.5: Firebase auth persistence via AsyncStorage (PR #50)
-- ✅ 1.4.1.6: Session restoration on app launch
-
-### Next iOS WBS Items
-- 1.4.1.7: Sign-out flow cleanup (clear storage, revoke Firebase session)
-- 1.4.4.3–1.4.4.4: RSVP UX (optimistic updates, disable for past weeks)
-- 1.4.5: Push notification handling (permission prompt, FCM registration, tap deep link)
-
-### WBS 1.3.9 Partially Complete (2026-07-12)
-- ✅ Smoke test token generation documented (Firebase custom token → ID token via REST exchange)
-- ✅ All failing smoke test assertions fixed (401 root cause: custom vs ID token; 404 root cause: no auto-provisioning)
-- ✅ Postman environment configured for manual API testing (`covey-dev` environment)
-- ✅ Postman Pre-request Script auto-refreshes Firebase ID token via refresh token (never expires)
-- ⏳ 1.3.9.1: Local smoke test runner script (without CI/CD) — deferred
-- ✅ 1.3.9.4: All 7 smoke tests passing in CI/CD pipeline (confirmed 2026-07-12)
-
-### WBS 1.3.2.3 Complete (2026-07-12)
-- ✅ `GET /me` auto-provisions Firestore user document on first sign-in
-- ✅ `AuthMiddleware.decodeToken()` exposes full `FirebaseToken` (email, displayName) to handlers
-- ✅ Verified via Postman: `smoke-test-user` provisioned successfully, returns 200
-
-### WBS 1.3.8 Complete (2026-07-12)
-- ✅ Lambda deployed: `covey-weekly-spot-dev` handles all HTTP API + scheduled jobs
-- ✅ EventBridge rules: `covey-weekly-selection-dev` (Thu 2AM UTC) + `covey-notification-delivery-dev` (Fri 2PM UTC)
-- ✅ Both rules route to single Lambda via `triggerType` input payload (`WEEKLY_SELECTION` / `NOTIFICATION_DELIVERY`)
-- ✅ `LambdaRouter` detects EventBridge events and dispatches without auth check
-- ✅ CloudWatch alarms and dashboard active (`covey-weekly-job-dev`)
-- ✅ CloudFormation stack `covey-weekly-job-dev` in CREATE_COMPLETE
-- ✅ `infrastructure/DEPLOYMENT.md` updated for single-Lambda architecture
+1. Trigger weekly Lambda job, check CloudWatch logs for venues (not REQUEST_DENIED)
+2. If working: merge PR #56 (`feature/places-api-new`)
+3. Then: WBS 1.4.5 push notifications (FCM registration, APNs, deep link)
 
 ---
 
-## ✅ What's Working Now (2026-06-30)
+## ✅ Completed WBS Items (all PRs merged to main)
 
-**iOS App Startup:**
-- ✅ App builds successfully: 0 errors, 1 warning
-- ✅ App installs on iPhone 16 Pro simulator
-- ✅ App launches without C++ crashes
-- ✅ JavaScript bundle loads and executes
-- ✅ Firebase SDK initializes
-- ✅ Auth flow ready for testing
-
-**Key Achievement:** Local Expo development workflow is now functional. Can build, install, and test the iOS app on simulator.
-
----
-
-## 🔧 Latest Debugging Session (2026-06-30) - RESOLVED ✅
-
-### Issue: Non-std C++ Exception + DOMRectReadOnly Error
-**Symptoms:**
-1. RCTFatal crash: `non-std C++ exception` at native bridge initialization
-2. JS Error: `ReferenceError: Property 'DOMRectReadOnly' doesn't exist`
-
-**Root Cause:** Corrupted Metro bundler cache + misaligned Babel/Metro configuration with Expo
-- babel.config.js was using generic @babel presets instead of Expo-aware `babel-preset-expo`
-- metro.config.js was missing entirely
-- tsconfig.json had manual config instead of extending expo/tsconfig.base
-- Combined with stale cache, this caused Hermes to crash
-
-### Solution Applied:
-1. ✅ **babel.config.js** — Simplified to use `babel-preset-expo`
-2. ✅ **metro.config.js** — Created with Expo's default config template
-3. ✅ **tsconfig.json** — Simplified to extend `expo/tsconfig.base` with just `strict: true`
-4. ✅ **Cleared all caches** — Metro, Watchman, Jest, node_modules/.cache
-5. ✅ **Rebuilt from scratch** — `npx expo run:ios --clear`
-
-### Result:
-**✅ App now launches successfully on iPhone 16 Pro simulator**
-- 0 errors, 1 warning (normal `-lc++` linker warning)
-- No C++ crashes
-- No JavaScript errors
-- Firebase initializes correctly
-
-### Files Modified:
-- `ios/babel.config.js` — Clean Expo preset config
-- `ios/metro.config.js` — NEW: Expo Metro default config
-- `ios/tsconfig.json` — Simplified to extend Expo base
-- `ios/src/services/firebase.ts` — Reverted to clean state
-- `ios/index.js` — Reverted to clean state
-- `ios/App.tsx` — Reverted to clean state
+| WBS | Description | PR |
+|-----|-------------|-----|
+| 1.2 | Infrastructure: Lambda, API Gateway, Firebase, Secrets Manager | #1–18 |
+| 1.3 | Backend: all handlers, auth, weekly job, smoke tests | #19–28 |
+| 1.4.1.1–4 | iOS auth screens: sign-in, sign-up, Apple, Google | #45–48 |
+| 1.4.1.5 | Firebase auth persistence via AsyncStorage | #50 |
+| 1.4.1.6 | Session restoration on app launch | #50 |
+| 1.4.1.7 | Sign-out flow cleanup | #52 |
+| 1.4.2 | City selection screen, profile city row, home city pill | #48, #51 |
+| 1.4.3.3–7 | Feed: maps link, RSVP counts, history cards, pull-to-refresh, empty state | #51 |
+| 1.4.4.3–4 | Optimistic RSVP updates + disable past-week buttons | #53 |
+| SDK 54 upgrade | RN 0.81.5, React 19, Expo 54, Swift AppDelegate | #49 |
+| Weekly job env fix | `GOOGLE_PLACES_API_KEY` added to CI/CD Lambda config | #54 |
+| Error logging | Places API error detail (status + error_message) | #55 |
 
 ---
 
-## 📚 Full Progress Documentation
+## 🔄 In Progress
 
-**Location:** `/Users/charlieknight/.claude/projects/-Users-charlieknight/memory/covey_wbs_progress.md`
+### Places API (New) Migration — PR #56 open
+**Branch:** `feature/places-api-new`  
+**Status:** Awaiting manual validation  
+**What changed:** `GooglePlacesClient.java` migrated from legacy `nearbysearch` GET to `places:searchNearby` POST with `X-Goog-Api-Key`/`X-Goog-FieldMask` headers. Response field names updated: `displayName.text`, `formattedAddress`, `id`, `userRatingCount`.  
+**Why needed:** Legacy Places API never enabled on GCP project — only Places API (New) is active.
 
-This file contains:
-- ✅ Completed WBS items
-- ⏳ Current work in progress
-- 📋 Next steps and how to resume
-- 🔗 Key files and branches
-- 🏗️ Infrastructure reference
-
----
-
-## 🚀 Quick Resume Guide
-
-To pick up where we left off:
-
+**To validate:**
 ```bash
-# 1. Update your repo and switch to active branch
-cd /Users/charlieknight/covey
-git checkout feature/firebase-config && git pull
+# Invoke weekly job manually
+aws lambda invoke \
+  --function-name covey-weekly-spot-dev \
+  --payload '{"triggerType":"WEEKLY_SELECTION"}' \
+  --region us-west-2 /tmp/out.json && cat /tmp/out.json
 
-# 2. Ensure Node 22 is active (required for dependency compatibility)
-nvm use 22
-
-# 3. Install/update iOS dependencies
-cd ios && npm install
-
-# 4. Note: Local Expo startup has known issues (see below)
-# For now, work continues on separate branch: feature/expo-local-startup
+# Follow logs
+aws logs tail /aws/lambda/covey-weekly-spot-dev --follow --region us-west-2
 ```
+Look for: venue names logged for Seattle, Tacoma, Bainbridge Island (not REQUEST_DENIED).
 
 ---
 
-## 📱 iOS Firebase Configuration (PR #20) - COMPLETED ✅
+## 🎯 Next WBS Items
 
-### What Was Done:
-- ✅ Firebase client configuration extracted from GoogleService-Info.plist
-- ✅ 8 GitHub Secrets configured for CI/CD pipeline:
-  - EXPO_PUBLIC_FIREBASE_API_KEY
-  - EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
-  - EXPO_PUBLIC_FIREBASE_PROJECT_ID
-  - EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
-  - EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-  - EXPO_PUBLIC_FIREBASE_APP_ID
-  - EXPO_PUBLIC_GOOGLE_CLIENT_ID
-  - EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
-- ✅ Local .env file created (git-ignored)
-- ✅ EAS project ID linked: `36924851-085c-4e48-8e07-94098d4b6b7b`
-- ✅ Firebase test utilities created
-- ✅ Frontend tests passing in CI/CD
-- ✅ Lambda deployment fixed to use S3 (>70MB package size issue)
-- ✅ Upgraded to Node v22.23.1 for compatibility
+### WBS 1.4.5 — Push Notifications
+- FCM token registration on app launch
+- APNs entitlements in app.json
+- Deep link from notification tap to HomeScreen
+- Lambda `NotificationDeliveryHandler` already wired
 
-### Files Created/Modified:
-- `ios/.env` — Firebase credentials (git-ignored)
-- `ios/src/utils/firebaseTestUtils.ts` — Test utilities
-- `ios/FIREBASE_SETUP.md` — Setup documentation
-- `ios/GITHUB_SECRETS_SETUP.md` — Secret configuration guide
-- `ios/app.json` — Updated with EAS project ID, removed invalid fields
-- `ios/package.json` — Updated to Expo SDK 51 expected versions
-- `babel.config.js` — Added private methods plugin, Flow preset
-- `jest.config.js` — Babel transformation configuration
-- Various dependency updates for Node 22 compatibility
+### After push notifications: WBS 1.5 (testing/QA pass)
 
 ---
 
-## 🐛 Resolved Issues - Local Expo Startup (FIXED in PR #21)
+## 🏗️ Infrastructure Reference
 
-### ✅ Issue: React Native C++ Exception (RCTFatal) - RESOLVED
-- **Symptom:** `non-std C++ exception` crash when app tries to initialize bridge
-- **Root Cause:** Misaligned Babel/Metro configuration + corrupted cache
-- **Status:** **RESOLVED**
-  - ✅ Aligned babel.config.js with Expo preset
-  - ✅ Created metro.config.js with Expo defaults
-  - ✅ Simplified tsconfig.json to extend expo/tsconfig.base
-  - ✅ Cleared all Metro and build caches
-  - ✅ App launches successfully on simulator
+| Component | Value |
+|-----------|-------|
+| Lambda | `covey-weekly-spot-dev` (java17, 512MB) |
+| API Gateway | `https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev` |
+| Firebase Project | `covey-76e19` |
+| Firestore Rules | `/firestore.rules` (row-level, create/update split) |
+| CI/CD | `.github/workflows/deploy-nonprod.yml` |
 
-### Issue: NSPOSIXErrorDomain code=60 (CoreSimulator Timeout) - RESEARCH ONLY
-- **Symptom:** Expo CLI hangs when trying to open exp:// URLs on iOS simulator
-- **Status:** Identified but not blocking - app can be launched directly with `npx expo run:ios`
-
-### Workarounds Applied:
-- ✅ Cleared CoreSimulator caches: `rm -rf ~/Library/Developer/CoreSimulator/Caches/*`
-- ✅ Erased and reset simulator: `xcrun simctl erase all`
-- ✅ Installed CocoaPods via Gem (rbenv conflict workaround)
-- ✅ Created placeholder PNG assets (required for prebuild)
-- ✅ Fixed Babel configuration (added private methods plugin)
-- ✅ Fixed Xcode schema validation (removed invalid `supportsTabletMode`)
-
-### Next Steps for Development:
-1. ✅ **Merge PR #21** to bring local testing capability to main
-2. Test SignIn screen renders correctly
-3. Test Firebase auth flow end-to-end
-4. Test navigation between screens
-5. Test API connectivity to Lambda backend
-6. Begin feature development (user profile, weekly spot, etc.)
-
-### Resources & Research:
-- [React Native Issue #30924](https://github.com/expo/expo/issues/30924) - RCTFatal with RN 0.74.5
-- [React Native Issue #37060](https://github.com/expo/expo/issues/37060) - Non-std C++ exception
-- [EAS CLI Issue #2443](https://github.com/expo/eas-cli/issues/2443) - RCTFatal in SDK 51
-- [Xcode 16+ Compiler Incompatibility](https://github.com/facebook/react-native/discussions) - Strict compiler with older RN
-- [Core issue: M-series Macs need arm64 excluded for iOS Simulator](https://developer.apple.com/forums/thread/735232)
+### Supported Cities (iOS + backend)
+- Seattle (47.6062, -122.3321)
+- Tacoma (47.2529, -122.4443)
+- Bainbridge Island (47.6262, -122.5209)
 
 ---
 
-## 🔑 Current Context (Session: 2026-06-28)
+## 🔑 Key Technical Decisions
 
-**What's Working:**
-- ✅ Firebase client SDK configured and linked to GCP project
-- ✅ GitHub Secrets set up for CI/CD
-- ✅ Frontend tests passing in GitHub Actions
-- ✅ Backend Lambda deployed (with S3 upload fix for large packages)
-- ✅ Native iOS project generated via prebuild (ios/ios/ directory)
-- ✅ Dependencies updated for Node 22 + Expo SDK 51
-- ✅ CocoaPods installed (rbenv issue resolved via global ruby 3.3.9)
-- ✅ **npx expo run:ios completed successfully (exit code 0)** - Build compiled all React Native dependencies without errors
-
-**What Needs Fixing:**
-- ⏳ **Verify app is running on simulator screen** (build completed but needs visual/runtime verification)
-- ⏳ Test SignIn screen renders without C++ crash
-- ⏳ Simulator connectivity via QR code times out (NSPOSIXErrorDomain code=60)
-- 📌 Test end-to-end auth flow with Firebase
-- 📌 Verify app can connect to Lambda backend API
-
----
-
-## 📖 Documentation & Memory
-
-**Progress Memory** (persistent across sessions):
-- **Path:** `/Users/charlieknight/.claude/projects/-Users-charlieknight/memory/covey_wbs_progress.md`
-- **Auto-loaded:** Claude Code reads this at session start
-- **Contains:** Full WBS status, branches, files, infrastructure details
-
-**Complete Documentation** (all in covey repo - `/covey/docs/`):
-
-**Project Management:**
-- `docs/pm/wbs.md` - Work Breakdown Structure
-- `docs/pm/charter.md` - Project Charter
-- `docs/pm/schedule.md` - Timeline and Milestones
-- `docs/pm/risk-register.csv` - Risk Register
-
-**Architecture & Design:**
-- `docs/arch/` - System architecture, API specs, data models, ADRs
-- `docs/arch/api/openapi.yaml` - API specification
-- `docs/arch/data-model/` - ERD and Firebase schema
-
-**Requirements:**
-- `docs/req/` - Use cases, scenarios, activity diagrams
-
-**Security:**
-- `docs/security/` - Threat model, auth design, security checklist
-
-**Testing & Quality:**
-- `docs/test/` - Test strategy
-- `docs/quality/` - Quality model and gates
-
-**UX & Design:**
-- `docs/ux/` - Personas, journeys, prototypes, design tokens
-
-**DevOps & Business Analysis:**
-- `docs/devops/` - Deployment and infrastructure docs
-- `docs/ba/` - Business analysis docs
-
-**SDLC State:**
-- `docs/sdlc.state.json` - Planning state tracking
-
-All 39 docs files now in covey project for easy access!
-
----
-
-## 📝 Latest Session Summary (2026-06-29)
-
-### 🎉 BREAKTHROUGH: iOS App Running Without Crashes!
-
-**Current Status:** ✅ App successfully running on iPhone 16 Pro simulator (PID: 92982)
-
-1. ✅ **iOS app now running on simulator (Process ID: 75818)**
-   - `npx expo run:ios` build completed with exit code 0
-   - All React Native & CocoaPods dependencies compiled without errors
-   - App installed and launched on iPhone 16 Pro simulator
-
-2. ✅ **Fixed DOMRectReadOnly polyfill with correct Babel handling**
-   - **Initial Problem:** Babel's import hoisting was placing ES6 imports above the polyfill
-   - **Root Cause:** Firebase SDK was initializing before DOMRectReadOnly was defined
-   - **Error Encountered:** `ReferenceError: Property 'DOMRectReadOnly' doesn't exist`
-   - **Solution:**
-     - Created separate `ios/dom-polyfill.js` file
-     - Use `require()` in entry point (CommonJS not subject to Babel hoisting)
-     - Ensures polyfill executes FIRST, then all other modules initialize
-   - **Result:** ✅ JavaScript initialization now succeeds
-
-3. ✅ **Resolved compiler warnings**
-   - Removed: `ld: ignoring duplicate libraries: '-lc++'`
-   - Now building with 0 errors, 0 warnings
-
-### Status:
-- **Build:** ✅ Successful (0 errors, 0 warnings)
-- **JavaScript:** ✅ Firebase SDK initializes without errors
-- **App Launch:** ✅ Running on simulator (PID 75818)
-- **Polyfill:** ✅ Properly preventing Babel hoisting
-
-### Testing Next:
-- Verify app UI renders (SignIn screen should be visible)
-- Test Firebase auth flow
-- Test API connectivity to Lambda backend
-- Verify navigation works
-
-### Key Files Modified:
-- `ios/dom-polyfill.js` — NEW: Separate polyfill file (CommonJS)
-- `ios/index.js` — UPDATED: Use require() for polyfill, then import modules
-
-### Notes for Next Session:
-- Branch: `feature/expo-local-startup` (active)
-- **CRITICAL:** Do NOT move polyfill back to index.js (Babel will hoist it)
-- App is currently running - can now test end-to-end workflows
-- Next priority: Verify SignIn screen renders, test Firebase auth
-
----
-
-## 💡 Remember for Next Session
-
-Before diving in, read the memory file to understand:
-1. What's been completed
-2. What PR #16 is about (classpath fix)
-3. How to test the current Lambda state
-4. What specifically needs to be fixed
-
-**The memory is your guide - reference it first!**
+| Decision | Detail |
+|----------|--------|
+| Firebase imports | `@firebase/app`, `@firebase/auth`, `@firebase/firestore` direct (not `firebase`) |
+| Metro config | `unstable_enablePackageExports = false` (fixes Firebase split-module bug) |
+| Auth persistence | `getReactNativePersistence(AsyncStorage)` + module augmentation `.d.ts` |
+| Auth state | `onAuthStateChanged` is sole setter — eliminates CityPicker flash race |
+| User provisioning | Lambda `GET /me` creates Firestore doc via Admin SDK (client never writes) |
+| Lambda deploys | CI/CD only — never `aws lambda update-function-code` directly |
