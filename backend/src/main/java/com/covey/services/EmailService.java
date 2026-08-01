@@ -6,120 +6,129 @@ import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.FirestoreClient;
 import java.util.concurrent.ExecutionException;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.ses.SesClient;
+import software.amazon.awssdk.services.ses.model.Body;
+import software.amazon.awssdk.services.ses.model.Content;
+import software.amazon.awssdk.services.ses.model.Destination;
+import software.amazon.awssdk.services.ses.model.Message;
+import software.amazon.awssdk.services.ses.model.SendEmailRequest;
+import software.amazon.awssdk.services.ses.model.SesException;
 
-/**
- * Sends templated emails via AWS SES for weekly venue notifications.
- *
- * Handles:
- * - Throttling and exponential backoff retries (max 3)
- * - 5xx error retries
- * - Hard failure DLQ moves (for manual review)
- */
 public class EmailService {
   private static final String USERS_COLLECTION = "users";
   private static final String WEEKLY_SPOTS_COLLECTION = "weeklySpots";
+  private static final String SENDER_EMAIL = System.getenv("SES_SENDER_EMAIL") != null
+      ? System.getenv("SES_SENDER_EMAIL")
+      : "williamchknight@gmail.com";
+  private static final int MAX_RETRIES = 3;
 
-  public EmailService() {}
+  private final SesClient sesClient;
 
-  /**
-   * Send templated email via AWS SES.
-   *
-   * @param userId User ID (recipient)
-   * @param spotId Weekly spot ID (city_weekId)
-   * @param weekId Week ID (for context in email)
-   */
+  public EmailService() {
+    this.sesClient = SesClient.builder()
+        .region(Region.US_WEST_2)
+        .build();
+  }
+
   public void sendWeeklyVenueEmail(String userId, String spotId, String weekId)
       throws Exception, ExecutionException, InterruptedException {
-    // Fetch user email from Firestore
     User user = getUser(userId);
     if (user == null || user.getEmail() == null) {
       throw new Exception("User or email not found for userId: " + userId);
     }
 
-    // Fetch venue details from Firestore
     WeeklySpot spot = getWeeklySpot(spotId);
     if (spot == null) {
       throw new Exception("Weekly spot not found for spotId: " + spotId);
     }
 
-    // Build email content
-    String subject = "Your Weekly Venue: " + spot.getVenueName();
-    String body = buildEmailBody(spot, user.getDisplayName());
+    String name = user.getDisplayName() != null ? user.getDisplayName() : "there";
+    String subject = "This week's spot: " + spot.getVenueName();
+    String textBody = buildTextBody(spot, name);
+    String htmlBody = buildHtmlBody(spot, name);
 
-    // Send via SES (placeholder implementation)
-    // In production: use software.amazon.awssdk.services.ses.SesClient
-    sendViaSES(user.getEmail(), subject, body);
-
+    sendWithRetry(user.getEmail(), subject, textBody, htmlBody);
     System.out.println("Email sent to " + user.getEmail() + " for venue " + spot.getVenueName());
   }
 
-  /**
-   * Fetch user profile from Firestore.
-   */
+  private void sendWithRetry(String to, String subject, String textBody, String htmlBody)
+      throws Exception {
+    int attempts = 0;
+    long backoffMs = 500;
+
+    while (attempts < MAX_RETRIES) {
+      try {
+        SendEmailRequest request = SendEmailRequest.builder()
+            .source(SENDER_EMAIL)
+            .destination(Destination.builder().toAddresses(to).build())
+            .message(Message.builder()
+                .subject(Content.builder().data(subject).charset("UTF-8").build())
+                .body(Body.builder()
+                    .text(Content.builder().data(textBody).charset("UTF-8").build())
+                    .html(Content.builder().data(htmlBody).charset("UTF-8").build())
+                    .build())
+                .build())
+            .build();
+
+        sesClient.sendEmail(request);
+        return;
+      } catch (SesException e) {
+        attempts++;
+        String code = e.awsErrorDetails().errorCode();
+        // Throttling and server errors are retryable
+        boolean retryable = code.equals("Throttling") || code.equals("ServiceUnavailable")
+            || e.statusCode() >= 500;
+        if (!retryable || attempts >= MAX_RETRIES) {
+          throw new Exception("SES send failed (" + code + "): " + e.getMessage(), e);
+        }
+        System.err.println("SES throttled, retrying in " + backoffMs + "ms (attempt " + attempts + ")");
+        Thread.sleep(backoffMs);
+        backoffMs *= 2;
+      }
+    }
+  }
+
+  private String buildTextBody(WeeklySpot spot, String name) {
+    return String.format(
+        "Hi %s,\n\n" +
+        "This week's spot for %s is:\n\n" +
+        "%s\n" +
+        "%s\n" +
+        "Rating: %.1f stars (%d reviews)\n\n" +
+        "Open the app to RSVP.\n\n" +
+        "— The Covey Team",
+        name, spot.getCity(), spot.getVenueName(), spot.getVenueAddress(),
+        spot.getRating(), spot.getReviewCount());
+  }
+
+  private String buildHtmlBody(WeeklySpot spot, String name) {
+    return String.format(
+        "<!DOCTYPE html><html><body style='font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;'>" +
+        "<h2 style='color:#6B4CE6;'>This week's spot 🍻</h2>" +
+        "<p>Hi %s,</p>" +
+        "<p>This week's spot for <strong>%s</strong> is:</p>" +
+        "<div style='background:#f9fafb;border-left:4px solid #6B4CE6;border-radius:8px;padding:16px;margin:16px 0;'>" +
+        "<h3 style='margin:0 0 4px;color:#1F2937;'>%s</h3>" +
+        "<p style='margin:0 0 8px;color:#6B7280;'>%s</p>" +
+        "<p style='margin:0;color:#6B7280;'>⭐ %.1f · %d reviews</p>" +
+        "</div>" +
+        "<p>Open the Covey app to RSVP and see who else is going.</p>" +
+        "<p style='color:#9CA3AF;font-size:12px;margin-top:32px;'>— The Covey Team</p>" +
+        "</body></html>",
+        name, spot.getCity(), spot.getVenueName(), spot.getVenueAddress(),
+        spot.getRating(), spot.getReviewCount());
+  }
+
   private User getUser(String userId) throws ExecutionException, InterruptedException {
     Firestore db = FirestoreClient.getFirestore();
     DocumentSnapshot doc = db.collection(USERS_COLLECTION).document(userId).get().get();
-
-    if (doc.exists()) {
-      return doc.toObject(User.class);
-    }
-    return null;
+    return doc.exists() ? doc.toObject(User.class) : null;
   }
 
-  /**
-   * Fetch weekly spot details from Firestore.
-   */
-  private WeeklySpot getWeeklySpot(String spotId)
-      throws ExecutionException, InterruptedException {
+  private WeeklySpot getWeeklySpot(String spotId) throws ExecutionException, InterruptedException {
     Firestore db = FirestoreClient.getFirestore();
     DocumentSnapshot doc = db.collection(WEEKLY_SPOTS_COLLECTION).document(spotId).get().get();
-
-    if (doc.exists()) {
-      return doc.toObject(WeeklySpot.class);
-    }
-    return null;
-  }
-
-  /**
-   * Build templated email body.
-   */
-  private String buildEmailBody(WeeklySpot spot, String userName) {
-    return String.format(
-        "Hi %s,\n\n" +
-            "Your weekly venue for this week is:\n\n" +
-            "🍷 %s\n" +
-            "%s\n" +
-            "Rating: %.1f ⭐ (%d reviews)\n\n" +
-            "Looking forward to seeing you there!\n\n" +
-            "Best,\nThe Covey Team",
-        userName,
-        spot.getVenueName(),
-        spot.getVenueAddress(),
-        spot.getRating(),
-        spot.getReviewCount());
-  }
-
-  /**
-   * Send email via AWS SES (placeholder).
-   *
-   * In production, use software.amazon.awssdk.services.ses.SesClient:
-   * - Handle throttling with exponential backoff
-   * - Retry on 5xx errors (max 3 attempts)
-   * - Move to DLQ on hard failure
-   * - Track bounce/complaint via SNS (separate handler)
-   */
-  private void sendViaSES(String recipientEmail, String subject, String body)
-      throws Exception {
-    // Placeholder: in production, integrate with AWS SDK
-    // client.sendEmail(request -> request
-    //   .source("noreply@covey.app")
-    //   .destination(d -> d.toAddresses(recipientEmail))
-    //   .message(m -> m
-    //     .subject(Content.builder().data(subject).build())
-    //     .body(Body.builder().text(Content.builder().data(body).build()).build())
-    //   )
-    // );
-
-    System.out.println("SES placeholder: would send to " + recipientEmail);
+    return doc.exists() ? doc.toObject(WeeklySpot.class) : null;
   }
 }
