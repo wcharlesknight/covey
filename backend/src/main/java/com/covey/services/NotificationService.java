@@ -9,6 +9,7 @@ import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -144,25 +145,25 @@ public class NotificationService {
       int end = Math.min(i + batchSize, tokens.size());
       List<String> batch = new ArrayList<>(tokens.subList(i, end));
 
-      // Build message with venue info
       String spotId = notification.getCity() + "_" + notification.getWeekId();
-      Message message = Message.builder()
-          .putData("weekId", notification.getWeekId())
-          .putData("city", notification.getCity())
-          .putData("spotId", spotId)
-          .build();
 
-      // Send to batch (multicast)
-      // Note: In production, use FirebaseMessaging.sendMulticast() for tokens
-      // This is a simplified example
       for (String token : batch) {
+        Message message = Message.builder()
+            .setToken(token)
+            .setNotification(Notification.builder()
+                .setTitle("This week's spot is ready 🍻")
+                .setBody("See where " + notification.getCity() + " is gathering this week.")
+                .build())
+            .putData("weekId", notification.getWeekId())
+            .putData("city", notification.getCity())
+            .putData("spotId", spotId)
+            .build();
         try {
           String result = FirebaseMessaging.getInstance().send(message);
-          System.out.println("FCM sent to token: " + result);
+          System.out.println("FCM sent to " + notification.getUserId() + ": " + result);
         } catch (Exception e) {
-          // Check if token is unregistered
-          if (e.getMessage().contains("UNREGISTERED") || e.getMessage().contains("INVALID_ARGUMENT")) {
-            // Hash the token to match how it's stored
+          if (e.getMessage() != null &&
+              (e.getMessage().contains("UNREGISTERED") || e.getMessage().contains("INVALID_ARGUMENT"))) {
             String tokenHash = hashToken(token);
             pushTokenService.markTokenInactive(notification.getUserId(), tokenHash);
           }
