@@ -63,12 +63,21 @@ public class InviteBatchService {
       ScheduledNotification pushNotif = new ScheduledNotification(
           uid, weeklySpot.getWeekId(), weeklySpot.getCity(),
           ScheduledNotification.Channel.FCM, deliverAt);
-      String notifId = ScheduledNotification.generateId(uid, weeklySpot.getWeekId(),
+      String pushNotifId = ScheduledNotification.generateId(uid, weeklySpot.getWeekId(),
           ScheduledNotification.Channel.FCM);
-      pushNotif.setId(notifId);
-      batch.set(db.collection(NOTIFICATIONS_COLLECTION).document(notifId), pushNotif);
+      pushNotif.setId(pushNotifId);
+      batch.set(db.collection(NOTIFICATIONS_COLLECTION).document(pushNotifId), pushNotif);
 
-      batchCount += 2;
+      // Email notification queued for same time
+      ScheduledNotification emailNotif = new ScheduledNotification(
+          uid, weeklySpot.getWeekId(), weeklySpot.getCity(),
+          ScheduledNotification.Channel.EMAIL, deliverAt);
+      String emailNotifId = ScheduledNotification.generateId(uid, weeklySpot.getWeekId(),
+          ScheduledNotification.Channel.EMAIL);
+      emailNotif.setId(emailNotifId);
+      batch.set(db.collection(NOTIFICATIONS_COLLECTION).document(emailNotifId), emailNotif);
+
+      batchCount += 3;
 
       if (batchCount >= BATCH_SIZE || i == users.size() - 1) {
         batch.commit().get();

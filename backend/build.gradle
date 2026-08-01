@@ -31,8 +31,9 @@ dependencies {
     // Google Auth (for Firebase token verification)
     implementation 'com.google.auth:google-auth-library-oauth2-http:1.11.0'
 
-    // AWS Secrets Manager (for loading Firebase credentials)
+    // AWS SDK v2
     implementation 'software.amazon.awssdk:secretsmanager:2.24.0'
+    implementation 'software.amazon.awssdk:ses:2.24.0'
 
     // gRPC dependencies - use shaded netty for Lambda to prevent runtime classpath conflicts
     implementation 'io.grpc:grpc-netty-shaded:1.55.1'

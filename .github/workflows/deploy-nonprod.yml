@@ -71,7 +71,7 @@ jobs:
             --function-name covey-weekly-spot-dev \
             --runtime java17 \
             --handler com.covey.LambdaRouter::handleRequest \
-            --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-dev}" \
+            --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-dev,SES_SENDER_EMAIL=${{ secrets.SES_SENDER_EMAIL }}}" \
             --region ${{ env.AWS_REGION }}
 
           aws lambda wait function-updated \
