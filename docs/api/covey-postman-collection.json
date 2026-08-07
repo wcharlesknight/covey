@@ -1,0 +1,195 @@
+{
+  "info": {
+    "name": "Covey API",
+    "_postman_id": "covey-api-collection",
+    "description": "Covey backend API. Set the `firebaseToken` variable before use.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev",
+      "type": "string"
+    },
+    {
+      "key": "firebaseToken",
+      "value": "PASTE_YOUR_FIREBASE_ID_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "Sx7gWu5TsvRuxqJOqfZH3YJyFvd2",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{firebaseToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Test Push (FCM)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/notifications/send-test", "host": ["{{baseUrl}}"], "path": ["notifications", "send-test"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"weekId\": \"2026-W32\",\n  \"city\": \"Tacoma\",\n  \"channel\": \"FCM\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send Test Email (SES)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/notifications/send-test", "host": ["{{baseUrl}}"], "path": ["notifications", "send-test"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"weekId\": \"2026-W32\",\n  \"city\": \"Tacoma\",\n  \"channel\": \"EMAIL\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Run Notification Delivery (EventBridge simulate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/weekly-job", "host": ["{{baseUrl}}"], "path": ["weekly-job"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"triggerType\": \"NOTIFICATION_DELIVERY\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "description": "Simulates the EventBridge NOTIFICATION_DELIVERY trigger by sending triggerType in the body. Sends all PENDING notifications with deliverAt <= now."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weekly Job",
+      "item": [
+        {
+          "name": "Run Weekly Selection",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/weekly-job", "host": ["{{baseUrl}}"], "path": ["weekly-job"] },
+            "description": "Picks venues for all cities and queues invites + scheduled notifications."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/me", "host": ["{{baseUrl}}"], "path": ["me"] }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/me", "host": ["{{baseUrl}}"], "path": ["me"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"city\": \"Tacoma\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Feed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/me/feed", "host": ["{{baseUrl}}"], "path": ["me", "feed"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weekly Spot",
+      "item": [
+        {
+          "name": "Get Weekly Spot",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/weekly-spot", "host": ["{{baseUrl}}"], "path": ["weekly-spot"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invites",
+      "item": [
+        {
+          "name": "RSVP to Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invites/:inviteId/rsvp",
+              "host": ["{{baseUrl}}"],
+              "path": ["invites", ":inviteId", "rsvp"],
+              "variable": [
+                { "key": "inviteId", "value": "PASTE_INVITE_ID_HERE" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"GOING\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Push Tokens",
+      "item": [
+        {
+          "name": "Register Push Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/push-tokens", "host": ["{{baseUrl}}"], "path": ["push-tokens"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"ExponentPushToken[xxxx]\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

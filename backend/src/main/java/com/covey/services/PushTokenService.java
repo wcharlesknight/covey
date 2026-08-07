@@ -70,7 +70,7 @@ public class PushTokenService {
     Query query = db.collection("users")
         .document(userId)
         .collection("pushTokens")
-        .whereEqualTo("isActive", true);
+        .whereEqualTo("active", true);
 
     ApiFuture<QuerySnapshot> future = query.get();
     QuerySnapshot snapshot = future.get();
@@ -99,7 +99,7 @@ public class PushTokenService {
         .document(userId)
         .collection("pushTokens")
         .document(tokenId)
-        .update("isActive", false)
+        .update("active", false)
         .get();
   }
 
