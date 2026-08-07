@@ -65,10 +65,17 @@ export function addForegroundListener(): Notifications.EventSubscription {
   });
 }
 
+export interface NotificationTapData {
+  spotId?: string;
+  weekId?: string;
+  city?: string;
+}
+
 export function addTapListener(
-  onTap: () => void
+  onTap: (data: NotificationTapData) => void
 ): Notifications.EventSubscription {
-  return Notifications.addNotificationResponseReceivedListener(() => {
-    onTap();
+  return Notifications.addNotificationResponseReceivedListener((response) => {
+    const data = response.notification.request.content.data as NotificationTapData;
+    onTap(data ?? {});
   });
 }

@@ -85,7 +85,34 @@ const HomeScreen = () => {
     try {
       setError(null);
       const response = await apiClient_methods.getFeed();
-      setFeed(response.data);
+      console.log('[Feed] status:', response.status);
+      console.log('[Feed] data type:', typeof response.data, Array.isArray(response.data));
+      console.log('[Feed] raw data:', JSON.stringify(response.data).slice(0, 500));
+      const items: any[] = Array.isArray(response.data) ? response.data : [];
+
+      const statusMap: Record<string, 'yes' | 'no' | 'interested' | undefined> = {
+        YES: 'yes', NO: 'no', INTERESTED: 'interested', INVITED: undefined,
+      };
+
+      const toSpot = (item: any): WeeklySpot => ({
+        id: item.invite.id,
+        venue: {
+          name: item.spot.venueName,
+          address: item.spot.venueAddress,
+          lat: 0,
+          lng: 0,
+        },
+        date: new Date(item.spot.weekStartDate).toISOString(),
+        rsvpCounts: { yes: 0, no: 0, interested: 0 },
+        userRsvp: statusMap[item.invite.status],
+      });
+
+      console.log('[Feed] items count:', items.length);
+      if (items[0]) console.log('[Feed] first item keys:', Object.keys(items[0]));
+      setFeed({
+        current: items[0] ? toSpot(items[0]) : null,
+        history: items.slice(1).map(toSpot),
+      });
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || 'Failed to load feed');
     } finally {

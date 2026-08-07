@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -19,6 +20,7 @@ import SignInScreen from './src/screens/SignInScreen';
 import CityPickerScreen from './src/screens/CityPickerScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import SpotDetailScreen from './src/screens/SpotDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -52,7 +54,7 @@ const AppTabs = () => (
   </Tab.Navigator>
 );
 
-// Root stack wraps tabs + CityPicker modal so city can be changed from Profile
+// Root stack wraps tabs + modals so they can be navigated to from anywhere
 const AppStack = () => (
   <Stack.Navigator>
     <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false }} />
@@ -60,6 +62,11 @@ const AppStack = () => (
       name="ChangeCity"
       component={CityPickerScreen}
       options={{ title: 'Change City', presentation: 'modal' }}
+    />
+    <Stack.Screen
+      name="SpotDetail"
+      component={SpotDetailScreen}
+      options={{ headerShown: false, presentation: 'modal' }}
     />
   </Stack.Navigator>
 );
@@ -84,6 +91,21 @@ export default function App() {
     bootstrap();
   }, [initializeAuth]);
 
+  // Handle deep links (covey://spot?spotId=X&city=Y&weekId=Z)
+  useEffect(() => {
+    const handleUrl = ({ url }: { url: string }) => {
+      const match = url.match(/^covey:\/\/spot\?(.+)$/);
+      if (!match) return;
+      const params = Object.fromEntries(new URLSearchParams(match[1]));
+      navigationRef.current?.navigate('SpotDetail', params);
+    };
+
+    const subscription = Linking.addEventListener('url', handleUrl);
+    Linking.getInitialURL().then(url => { if (url) handleUrl({ url }); });
+
+    return () => subscription.remove();
+  }, []);
+
   // Register for push notifications once user is fully onboarded
   useEffect(() => {
     const hasCity = user?.city && user.city.length > 0;
@@ -94,8 +116,8 @@ export default function App() {
     const listeners = [
       addTokenRefreshListener(),
       addForegroundListener(),
-      addTapListener(() => {
-        navigationRef.current?.navigate('Tabs', { screen: 'Home' });
+      addTapListener((data) => {
+        navigationRef.current?.navigate('SpotDetail', data);
       }),
     ];
     notificationListenersRef.current = listeners;
