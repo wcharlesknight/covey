@@ -60,7 +60,8 @@ public class UserFeedHandler implements RequestHandler<Map<String, Object>, Map<
 
       List<Map<String, Object>> feedItems = new ArrayList<>();
       for (Invite invite : invites) {
-        WeeklySpot spot = feedService.getWeeklySpot(invite.getWeeklySpotId());
+        String spotId = invite.getCity() + "_" + invite.getWeekId();
+        WeeklySpot spot = feedService.getWeeklySpot(spotId);
         if (spot != null) {
           Map<String, Object> item = new HashMap<>();
           item.put("invite", invite);

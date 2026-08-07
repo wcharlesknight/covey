@@ -90,19 +90,21 @@ public class EmailService {
   }
 
   private String buildTextBody(WeeklySpot spot, String name) {
+    String deepLink = buildDeepLink(spot);
     return String.format(
         "Hi %s,\n\n" +
         "This week's spot for %s is:\n\n" +
         "%s\n" +
         "%s\n" +
         "Rating: %.1f stars (%d reviews)\n\n" +
-        "Open the app to RSVP.\n\n" +
+        "Open in Covey: %s\n\n" +
         "— The Covey Team",
         name, spot.getCity(), spot.getVenueName(), spot.getVenueAddress(),
-        spot.getRating(), spot.getReviewCount());
+        spot.getRating(), spot.getReviewCount(), deepLink);
   }
 
   private String buildHtmlBody(WeeklySpot spot, String name) {
+    String deepLink = buildDeepLink(spot);
     return String.format(
         "<!DOCTYPE html><html><body style='font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;'>" +
         "<h2 style='color:#6B4CE6;'>This week's spot 🍻</h2>" +
@@ -113,11 +115,18 @@ public class EmailService {
         "<p style='margin:0 0 8px;color:#6B7280;'>%s</p>" +
         "<p style='margin:0;color:#6B7280;'>⭐ %.1f · %d reviews</p>" +
         "</div>" +
-        "<p>Open the Covey app to RSVP and see who else is going.</p>" +
+        "<a href='%s' style='display:inline-block;background:#6B4CE6;color:#fff;font-weight:600;" +
+        "text-decoration:none;padding:14px 28px;border-radius:10px;font-size:16px;margin:8px 0;'>" +
+        "See this week's spot →</a>" +
         "<p style='color:#9CA3AF;font-size:12px;margin-top:32px;'>— The Covey Team</p>" +
         "</body></html>",
         name, spot.getCity(), spot.getVenueName(), spot.getVenueAddress(),
-        spot.getRating(), spot.getReviewCount());
+        spot.getRating(), spot.getReviewCount(), deepLink);
+  }
+
+  private String buildDeepLink(WeeklySpot spot) {
+    return String.format("covey://spot?spotId=%s_%s&city=%s&weekId=%s",
+        spot.getCity(), spot.getWeekId(), spot.getCity(), spot.getWeekId());
   }
 
   private User getUser(String userId) throws ExecutionException, InterruptedException {
