@@ -225,7 +225,7 @@
 ### 1.6 Deployment and Launch
 
 #### 1.6.1 Beta Testing (TestFlight)
-- [ ] 1.6.1.1 Distribute build to internal beta group via TestFlight
+- [x] 1.6.1.1 Distribute build to internal beta group via TestFlight
 - [ ] 1.6.1.2 Collect beta feedback for 1 week minimum
 - [ ] 1.6.1.3 Triage beta feedback; fix critical bugs; defer non-critical to post-launch backlog
 - [ ] 1.6.1.4 Confirm weekly job runs automatically during beta period
