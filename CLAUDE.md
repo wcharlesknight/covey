@@ -78,15 +78,15 @@
 - Local dev: set `EXPO_PUBLIC_API_BASE_URL=http://localhost:3000` in `.env`
 - Auth: Firebase ID tokens required
 
-### Lambda Deployment
+### Merging to main triggers CI/CD automatically
+**Every merge to main deploys both:**
+1. **Backend → Lambda (nonprod)**: Gradle build → S3 upload → Lambda update → smoke tests
+2. **iOS → TestFlight**: EAS cloud build → `eas submit` → App Store Connect
+
 - ❌ **NEVER use AWS CLI to update Lambda directly** — always go through CI/CD
-- Backend changes → commit to feature branch → create PR → merge to main
-- GitHub Actions workflow (`.github/workflows/deploy-nonprod.yml`) automatically:
-  1. Builds Lambda JAR with Gradle
-  2. Uploads to S3 (size > 70MB)
-  3. Updates Lambda function
-  4. Runs smoke tests
-- Watch deployment in GitHub Actions tab after merging to main
+- ❌ **NEVER push iOS builds manually** — always merge to main and let EAS handle it
+- Watch both jobs in the GitHub Actions tab after merging
+- Lambda endpoint: `https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev`
 
 ---
 
