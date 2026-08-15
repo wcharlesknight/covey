@@ -183,7 +183,7 @@
 - [ ] 1.4.7.3 Prepare app screenshots (required sizes: 6.7", 6.5", 5.5" displays)
 - [ ] 1.4.7.4 Write App Store description and privacy policy URL
 - [ ] 1.4.7.5 Configure app privacy manifest (required by Apple for third-party SDKs)
-- [ ] 1.4.7.6 Archive and upload build to App Store Connect via Xcode
+- [x] 1.4.7.6 Archive and upload build to App Store Connect via EAS CI/CD (GitHub Actions)
 - [ ] 1.4.7.7 Submit for TestFlight review (internal testers do not require review; external does)
 
 ---
@@ -278,7 +278,7 @@
 - [ ] 1.8.2.7 Remove Detox dependencies or add the missing Detox configuration (currently declared but unconfigured)
 
 #### 1.8.3 CI/CD and Repo Hygiene
-- [ ] 1.8.3.1 Bump CI Node 18 → 20+ in `test.yml` and `deploy-nonprod.yml` (Expo SDK 54 requires newer Node; CI will fail after SDK upgrade merges)
+- [x] 1.8.3.1 Bump CI Node 18 → 22 in `deploy-nonprod.yml`
 - [ ] 1.8.3.2 Add missing `.commitlintrc.json` or remove the commitlint job; remove `continue-on-error` from the TruffleHog secrets scan
 - [ ] 1.8.3.3 Add Dependabot (or Renovate) config covering Gradle, npm, and GitHub Actions
 
