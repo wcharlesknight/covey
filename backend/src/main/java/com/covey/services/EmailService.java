@@ -20,7 +20,7 @@ public class EmailService {
   private static final String WEEKLY_SPOTS_COLLECTION = "weeklySpots";
   private static final String SENDER_EMAIL = System.getenv("SES_SENDER_EMAIL") != null
       ? System.getenv("SES_SENDER_EMAIL")
-      : "williamchknight@gmail.com";
+      : "hello@coveyspot.app";
   private static final int MAX_RETRIES = 3;
 
   private final SesClient sesClient;

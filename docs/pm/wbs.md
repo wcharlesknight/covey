@@ -28,7 +28,7 @@
 - [x] 1.2.1.2 Enable Firebase Authentication (Apple Sign-In, Google Sign-In)
 - [x] 1.2.1.3 Configure Firestore database and initial security rules
 - [x] 1.2.1.4 Configure Firebase Cloud Messaging (FCM) for push notifications
-- [ ] 1.2.1.5 Configure APNs certificates for iOS push delivery
+- [x] 1.2.1.5 Configure APNs certificates for iOS push delivery
 - [ ] 1.2.1.6 Enable Firebase Crashlytics for iOS crash reporting
 
 #### 1.2.2 AWS Configuration
@@ -99,6 +99,14 @@
 - [x] 1.3.6.9 Write unit tests for spot selection, exclusion, and rotation logic
 - [ ] 1.3.6.10 Write integration tests for full weekly job flow (with Firestore emulator)
 
+#### 1.3.6a Email Deliverability and Branding
+- [x] 1.3.6a.1 Register a custom domain (coveyspot.app) and verify it in AWS SES
+- [x] 1.3.6a.2 Configure SPF, DKIM, and DMARC DNS records to pass spam filters
+- [x] 1.3.6a.3 Update SES sender address from personal Gmail to hello@coveyspot.app
+- [ ] 1.3.6a.4 Add sender logo/avatar so email clients display brand icon in inbox list (Google BIMI or sender profile)
+- [x] 1.3.6a.5 Request SES production access (move out of sandbox to send to unverified addresses)
+- [ ] 1.3.6a.6 Test deliverability with Mail Tester or similar tool; target score 9+/10
+
 #### 1.3.7 Backend Testing and Quality
 - [x] 1.3.7.1 Achieve minimum 80% unit test coverage across Lambda handlers and service classes
 - [x] 1.3.7.2 Run integration tests against Firebase Emulator Suite (Auth, Firestore)
@@ -141,26 +149,26 @@
 #### 1.4.3 Home Feed Screen
 - [x] 1.4.3.1 Build home feed screen layout (current spot card + history list)
 - [x] 1.4.3.2 Integrate GET /me/feed API call with loading and error states
-- [ ] 1.4.3.3 Display weekly spot: venue name, address, description, Google Maps link or in-app map preview
-- [ ] 1.4.3.4 Display RSVP counts (yes, no, interested) for current spot
-- [ ] 1.4.3.5 Display 4-week history cards with spot summary and RSVP counts
-- [ ] 1.4.3.6 Implement pull-to-refresh
-- [ ] 1.4.3.7 Handle empty state (no spot yet this week)
+- [x] 1.4.3.3 Display weekly spot: venue name, address, Google Maps link
+- [x] 1.4.3.4 Display RSVP counts (yes, no, interested) for current spot
+- [x] 1.4.3.5 Display 4-week history cards with spot summary and RSVP counts
+- [x] 1.4.3.6 Implement pull-to-refresh
+- [x] 1.4.3.7 Handle empty state (no spot yet this week)
 - [ ] 1.4.3.8 Write unit tests for feed view model / data parsing
 
 #### 1.4.4 RSVP UI
 - [x] 1.4.4.1 Build RSVP control (yes / no / interested buttons or segmented picker)
 - [x] 1.4.4.2 Wire RSVP actions to POST /invites/{id}/rsvp API call
-- [ ] 1.4.4.3 Show optimistic UI update immediately on tap; revert on API error
-- [ ] 1.4.4.4 Disable RSVP control for historical spots (past weeks are read-only)
+- [x] 1.4.4.3 Show optimistic UI update immediately on tap; revert on API error
+- [x] 1.4.4.4 Disable RSVP control for historical spots (past weeks are read-only)
 - [ ] 1.4.4.5 Write unit tests for RSVP state management and API interaction
 
 #### 1.4.5 Push Notification Handling
-- [ ] 1.4.5.1 Request push notification permission from user on first launch (post sign-in)
-- [ ] 1.4.5.2 Register device with FCM and call POST /push-tokens with received token
-- [ ] 1.4.5.3 Handle APNs token refresh (re-register on token change)
-- [ ] 1.4.5.4 Implement notification tap handler: deep link to home feed for the current weekly spot
-- [ ] 1.4.5.5 Handle foreground notification display (show banner or in-app alert)
+- [x] 1.4.5.1 Request push notification permission from user on first launch (post sign-in)
+- [x] 1.4.5.2 Register device with Expo push service and call POST /push-tokens with received token
+- [x] 1.4.5.3 Handle APNs token refresh (re-register on token change)
+- [x] 1.4.5.4 Implement notification tap handler: deep link to SpotDetailScreen for current weekly spot
+- [x] 1.4.5.5 Handle foreground notification display (show banner or in-app alert)
 - [ ] 1.4.5.6 Write unit tests for notification registration and deep link routing
 
 #### 1.4.6 iOS Testing

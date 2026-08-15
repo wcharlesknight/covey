@@ -35,8 +35,13 @@
 
 ### After PR is merged:
 1. **Update PROGRESS.md** — document what was completed
-2. **Check off items in docs/pm/wbs.md** — mark completed WBS items
+2. **Check off items in docs/pm/wbs.md** — mark completed WBS items ⚠️ ALWAYS DO THIS
 3. **Update docs/sdlc.state.json** if planning artifacts were modified
+
+### WBS Update Rule (CRITICAL):
+- **Every session** — before ending, check `docs/pm/wbs.md` and check off any completed items
+- **Every new feature** — add a WBS item before starting work if one doesn't exist
+- WBS is the source of truth for project progress — keep it current
 
 ---
 
