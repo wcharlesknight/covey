@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Linking } from 'react-native';
+import { Linking, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -24,6 +24,24 @@ import SpotDetailScreen from './src/screens/SpotDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const loadingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#6B4CE6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wordmark: {
+    fontSize: 42,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 2,
+  },
+  spinner: {
+    marginTop: 32,
+  },
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -128,7 +146,12 @@ export default function App() {
   }, [user?.uid, user?.city]);
 
   if (isInitializing) {
-    return null;
+    return (
+      <View style={loadingStyles.container}>
+        <Text style={loadingStyles.wordmark}>covey</Text>
+        <ActivityIndicator color="rgba(255,255,255,0.6)" style={loadingStyles.spinner} />
+      </View>
+    );
   }
 
   const hasCity = user?.city && user.city.length > 0;

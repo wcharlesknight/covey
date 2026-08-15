@@ -99,6 +99,14 @@
 - [x] 1.3.6.9 Write unit tests for spot selection, exclusion, and rotation logic
 - [ ] 1.3.6.10 Write integration tests for full weekly job flow (with Firestore emulator)
 
+#### 1.3.6a Email Deliverability and Branding
+- [ ] 1.3.6a.1 Register a custom domain (e.g. covey.app) and verify it in AWS SES
+- [ ] 1.3.6a.2 Configure SPF, DKIM, and DMARC DNS records to pass spam filters
+- [ ] 1.3.6a.3 Update SES sender address from personal Gmail to branded domain (e.g. hello@covey.app)
+- [ ] 1.3.6a.4 Add sender logo/avatar so email clients display brand icon in inbox list (Google BIMI or sender profile)
+- [ ] 1.3.6a.5 Request SES production access (move out of sandbox to send to unverified addresses)
+- [ ] 1.3.6a.6 Test deliverability with Mail Tester or similar tool; target score 9+/10
+
 #### 1.3.7 Backend Testing and Quality
 - [x] 1.3.7.1 Achieve minimum 80% unit test coverage across Lambda handlers and service classes
 - [x] 1.3.7.2 Run integration tests against Firebase Emulator Suite (Auth, Firestore)
