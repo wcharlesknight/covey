@@ -10,9 +10,31 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "testflight": {
+      "distribution": "store",
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    }
   },
   "submit": {
-    "production": {}
+    "testflight": {
+      "ios": {
+        "ascAppId": "6801878266",
+        "bundleIdentifier": "com.covery.app"
+      }
+    },
+    "production": {
+      "ios": {
+        "ascAppId": "6801878266",
+        "bundleIdentifier": "com.covery.app"
+      }
+    }
   }
 }

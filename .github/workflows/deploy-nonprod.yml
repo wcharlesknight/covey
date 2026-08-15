@@ -141,7 +141,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'ios/package-lock.json'
 
@@ -156,19 +156,28 @@ jobs:
       - name: Build for TestFlight with EAS
         run: |
           cd ios
-          eas build --platform ios --profile preview
+          eas build --platform ios --profile testflight --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Submit to TestFlight
         run: |
+          echo "$APPSTORE_API_PRIVATE_KEY" > /tmp/AuthKey.p8
           cd ios
-          eas submit --platform ios --latest
+          eas submit \
+            --platform ios \
+            --profile testflight \
+            --latest \
+            --non-interactive \
+            --apple-api-key-path /tmp/AuthKey.p8 \
+            --apple-api-key-id "$APPSTORE_API_KEY_ID" \
+            --apple-api-issuer-id "$APPSTORE_ISSUER_ID"
+          rm -f /tmp/AuthKey.p8
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
           APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
 
   update-planning-state:
     runs-on: ubuntu-latest
