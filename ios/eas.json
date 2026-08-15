@@ -26,14 +26,12 @@
   "submit": {
     "testflight": {
       "ios": {
-        "appleId": "williamchknight@gmail.com",
         "ascAppId": "6801878266",
         "bundleIdentifier": "com.covery.app"
       }
     },
     "production": {
       "ios": {
-        "appleId": "williamchknight@gmail.com",
         "ascAppId": "6801878266",
         "bundleIdentifier": "com.covery.app"
       }
