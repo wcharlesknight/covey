@@ -156,19 +156,19 @@ jobs:
       - name: Build for TestFlight with EAS
         run: |
           cd ios
-          eas build --platform ios --profile preview
+          eas build --platform ios --profile testflight --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Submit to TestFlight
         run: |
           cd ios
-          eas submit --platform ios --latest
+          eas submit --platform ios --latest --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
-          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          ASC_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
 
   update-planning-state:
     runs-on: ubuntu-latest
