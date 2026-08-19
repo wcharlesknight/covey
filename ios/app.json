@@ -18,6 +18,9 @@
     "ios": {
       "bundleIdentifier": "com.covery.app",
       "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
       "entitlements": {
         "aps-environment": "development"
       }
