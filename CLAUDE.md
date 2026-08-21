@@ -88,6 +88,12 @@
 - Watch both jobs in the GitHub Actions tab after merging
 - Lambda endpoint: `https://lal06351qg.execute-api.us-west-2.amazonaws.com/dev`
 
+### ⚠️ iOS Build Number — MUST increment before every merge to main
+- **File:** `ios/app.json` → `expo.ios.buildNumber`
+- Apple rejects duplicate build numbers — EAS submit will fail with a generic error if you reuse one
+- Increment by 1 each time: `"1"` → `"2"` → `"3"` etc.
+- This applies even for small fixes — every merge to main triggers a TestFlight submission
+
 ---
 
 ## Code Standards
