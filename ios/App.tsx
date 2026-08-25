@@ -101,13 +101,18 @@ export default function App() {
         await initializeAuth();
       } catch (e) {
         console.error('Failed to initialize app:', e);
-      } finally {
-        await SplashScreen.hideAsync();
       }
     };
 
     bootstrap();
   }, [initializeAuth]);
+
+  // Hide native splash only once auth is resolved — prevents black flash
+  useEffect(() => {
+    if (!isInitializing) {
+      SplashScreen.hideAsync();
+    }
+  }, [isInitializing]);
 
   // Handle deep links (covey://spot?spotId=X&city=Y&weekId=Z)
   useEffect(() => {
