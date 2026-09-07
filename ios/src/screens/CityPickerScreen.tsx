@@ -11,12 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient_methods } from '../services/api';
-
-const CITIES = [
-  'Seattle',
-  'Tacoma',
-  'Bainbridge Island',
-];
+import { CITIES } from '../constants/cities';
 
 export default function CityPickerScreen() {
   const navigation = useNavigation();

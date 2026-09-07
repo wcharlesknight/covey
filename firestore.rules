@@ -91,6 +91,22 @@ service cloud.firestore {
     }
 
     // ============================================
+    // COLLECTION: rsvps
+    // ============================================
+    // Per-user RSVP to a weekly spot, in ANY city (decoupled from invites).
+    // ID format: {city}_{weekId}_{userId}
+    // The Lambda writes via Admin SDK (bypasses rules). Direct client access is
+    // owner-scoped for writes; any authenticated user may read for aggregate counts.
+    match /rsvps/{rsvpId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid &&
+                       request.resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ============================================
     // COLLECTION: venueExclusions
     // ============================================
     // 12-week venue rotation history (job service only)

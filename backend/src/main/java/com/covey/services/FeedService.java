@@ -44,6 +44,30 @@ public class FeedService {
     return invites;
   }
 
+  public List<WeeklySpot> getRecentSpotsForCity(String city, int limit)
+      throws ExecutionException, InterruptedException {
+    Firestore db = FirestoreClient.getFirestore();
+
+    Query query = db.collection(WEEKLY_SPOTS_COLLECTION).whereEqualTo("city", city);
+    QuerySnapshot snapshot = query.get().get();
+
+    List<WeeklySpot> spots = new ArrayList<>();
+    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+      WeeklySpot spot = doc.toObject(WeeklySpot.class);
+      if (spot != null) {
+        spot.setId(doc.getId());
+        spots.add(spot);
+      }
+    }
+
+    // Sort most-recent first in memory to avoid a composite index (city + weekStartDate).
+    spots.sort((a, b) -> Long.compare(b.getWeekStartDate(), a.getWeekStartDate()));
+    if (spots.size() > limit) {
+      return new ArrayList<>(spots.subList(0, limit));
+    }
+    return spots;
+  }
+
   public WeeklySpot getWeeklySpot(String weeklySpotId)
       throws ExecutionException, InterruptedException {
     Firestore db = FirestoreClient.getFirestore();

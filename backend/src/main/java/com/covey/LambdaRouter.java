@@ -20,6 +20,8 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
   private static final AuthHandler authHandler;
   private static final NotificationTriggerHandler notificationTriggerHandler;
   private static final NotificationDispatchHandler notificationDispatchHandler;
+  private static final CityFeedHandler cityFeedHandler;
+  private static final SpotRsvpHandler spotRsvpHandler;
 
   static {
     try {
@@ -33,6 +35,8 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
       authHandler = new AuthHandler();
       notificationTriggerHandler = new NotificationTriggerHandler();
       notificationDispatchHandler = new NotificationDispatchHandler();
+      cityFeedHandler = new CityFeedHandler();
+      spotRsvpHandler = new SpotRsvpHandler();
     } catch (Exception e) {
       throw new ExceptionInInitializerError(e);
     }
@@ -69,6 +73,10 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
         return userPatchHandler.handleRequest(event, context);
       } else if (path.equals("/me/feed") && method.equals("GET")) {
         return userFeedHandler.handleRequest(event, context);
+      } else if (path.equals("/feed") && method.equals("GET")) {
+        return cityFeedHandler.handleRequest(event, context);
+      } else if (path.equals("/rsvp") && method.equals("POST")) {
+        return spotRsvpHandler.handleRequest(event, context);
       } else if (path.matches("/invites/.*/rsvp") && method.equals("POST")) {
         return rsvpHandler.handleRequest(event, context);
       } else if (path.equals("/push-tokens") && method.equals("POST")) {
