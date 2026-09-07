@@ -28,13 +28,15 @@
     "testflight": {
       "ios": {
         "ascAppId": "6801878266",
-        "bundleIdentifier": "com.covery.app"
+        "bundleIdentifier": "com.covery.app",
+        "autoIncrement": "buildNumber"
       }
     },
     "production": {
       "ios": {
         "ascAppId": "6801878266",
-        "bundleIdentifier": "com.covery.app"
+        "bundleIdentifier": "com.covery.app",
+        "autoIncrement": "buildNumber"
       }
     }
   }
