@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Linking,
   Alert,
+  ActionSheetIOS,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
@@ -132,6 +133,19 @@ const HomeScreen = () => {
     loadFeed(viewedCity);
   }, [viewedCity]);
 
+  const showCityPicker = () => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: 'View a city',
+        options: [...CITIES, 'Cancel'],
+        cancelButtonIndex: CITIES.length,
+      },
+      (index) => {
+        if (index < CITIES.length) setViewedCity(CITIES[index]);
+      }
+    );
+  };
+
   const handleRsvp = async (spotId: string, newStatus: 'yes' | 'no' | 'interested') => {
     if (!feed?.current || rsvpSubmitting) return;
 
@@ -191,20 +205,14 @@ const HomeScreen = () => {
       <View style={styles.header}>
         <Text style={styles.weeklyTitle}>This Week's Spot</Text>
 
-        <View style={styles.cityTabs}>
-          {CITIES.map((c) => (
-            <TouchableOpacity
-              key={c}
-              style={[styles.cityTab, viewedCity === c && styles.cityTabActive]}
-              onPress={() => setViewedCity(c)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.cityTabText, viewedCity === c && styles.cityTabTextActive]}>
-                {c}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TouchableOpacity
+          style={styles.cityPill}
+          onPress={showCityPicker}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.cityPillText}>{viewedCity}</Text>
+          <Text style={styles.cityPillChevron}> ⌄</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.notifyRow}
@@ -351,31 +359,24 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 8,
   },
-  cityTabs: {
+  cityPill: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    padding: 4,
-    gap: 4,
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: '#EDE9FE',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
     marginBottom: 8,
   },
-  cityTab: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cityTabActive: {
-    backgroundColor: '#6B4CE6',
-  },
-  cityTabText: {
-    fontSize: 13,
+  cityPillText: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#6B4CE6',
   },
-  cityTabTextActive: {
-    color: '#FFFFFF',
+  cityPillChevron: {
+    fontSize: 14,
+    color: '#6B4CE6',
   },
   notifyRow: {
     alignSelf: 'flex-start',
