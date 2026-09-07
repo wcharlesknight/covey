@@ -7,6 +7,37 @@ import java.util.Map;
 
 public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
+  // Handlers are constructed once at class-load. This runs during the Lambda INIT
+  // phase, so the initialized state (including Firebase) is captured in the SnapStart
+  // snapshot and reused across warm and restored invocations instead of per request.
+  private static final WeeklyJobHandler weeklyJobHandler;
+  private static final UserGetHandler userGetHandler;
+  private static final UserPatchHandler userPatchHandler;
+  private static final UserFeedHandler userFeedHandler;
+  private static final RsvpHandler rsvpHandler;
+  private static final PushTokenHandler pushTokenHandler;
+  private static final WeeklySpotHandler weeklySpotHandler;
+  private static final AuthHandler authHandler;
+  private static final NotificationTriggerHandler notificationTriggerHandler;
+  private static final NotificationDispatchHandler notificationDispatchHandler;
+
+  static {
+    try {
+      weeklyJobHandler = new WeeklyJobHandler();
+      userGetHandler = new UserGetHandler();
+      userPatchHandler = new UserPatchHandler();
+      userFeedHandler = new UserFeedHandler();
+      rsvpHandler = new RsvpHandler();
+      pushTokenHandler = new PushTokenHandler();
+      weeklySpotHandler = new WeeklySpotHandler();
+      authHandler = new AuthHandler();
+      notificationTriggerHandler = new NotificationTriggerHandler();
+      notificationDispatchHandler = new NotificationDispatchHandler();
+    } catch (Exception e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+
   @Override
   public Map<String, Object> handleRequest(Map<String, Object> event, Context context) {
     context.getLogger().log("Lambda request received: " + event);
@@ -31,19 +62,19 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
 
       // Route to appropriate handler based on path
       if (path.equals("/weekly-job") && method.equals("POST")) {
-        return new WeeklyJobHandler().handleRequest(event, context);
+        return weeklyJobHandler.handleRequest(event, context);
       } else if (path.equals("/me") && method.equals("GET")) {
-        return new UserGetHandler().handleRequest(event, context);
+        return userGetHandler.handleRequest(event, context);
       } else if (path.equals("/me") && method.equals("PATCH")) {
-        return new UserPatchHandler().handleRequest(event, context);
+        return userPatchHandler.handleRequest(event, context);
       } else if (path.equals("/me/feed") && method.equals("GET")) {
-        return new UserFeedHandler().handleRequest(event, context);
+        return userFeedHandler.handleRequest(event, context);
       } else if (path.matches("/invites/.*/rsvp") && method.equals("POST")) {
-        return new RsvpHandler().handleRequest(event, context);
+        return rsvpHandler.handleRequest(event, context);
       } else if (path.equals("/push-tokens") && method.equals("POST")) {
-        return new PushTokenHandler().handleRequest(event, context);
+        return pushTokenHandler.handleRequest(event, context);
       } else if (path.equals("/weekly-spot") && method.equals("GET")) {
-        Object result = new WeeklySpotHandler().handleRequest(event, context);
+        Object result = weeklySpotHandler.handleRequest(event, context);
         if (result instanceof Map) {
           return (Map<String, Object>) result;
         } else {
@@ -54,9 +85,9 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
           return response;
         }
       } else if ((path.equals("/auth") || path.equals("/auth/refresh")) && method.equals("POST")) {
-        return new AuthHandler().handleRequest(event, context);
+        return authHandler.handleRequest(event, context);
       } else if (path.equals("/notifications/send-test") && method.equals("POST")) {
-        return new NotificationTriggerHandler().handleRequest(event, context);
+        return notificationTriggerHandler.handleRequest(event, context);
       } else {
         // 404 Not Found
         Map<String, Object> response = new java.util.HashMap<>();
@@ -78,9 +109,9 @@ public class LambdaRouter implements RequestHandler<Map<String, Object>, Map<Str
     try {
       switch (triggerType) {
         case "WEEKLY_SELECTION":
-          return new WeeklyJobHandler().handleScheduledEvent(context);
+          return weeklyJobHandler.handleScheduledEvent(context);
         case "NOTIFICATION_DELIVERY":
-          return new NotificationDispatchHandler().handleRequest(event, context);
+          return notificationDispatchHandler.handleRequest(event, context);
         default:
           context.getLogger().log("Unknown triggerType: " + triggerType);
           Map<String, Object> response = new java.util.HashMap<>();

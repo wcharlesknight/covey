@@ -260,7 +260,7 @@
 
 #### 1.8.1 Backend Hardening
 - [ ] 1.8.1.1 Stop logging full request event in `LambdaRouter` (Authorization headers currently written to CloudWatch); log method/path only
-- [ ] 1.8.1.2 Cache handler/service instances as static fields instead of constructing per request (Lambda execution-environment reuse)
+- [x] 1.8.1.2 Cache handler/service instances as static fields instead of constructing per request (Lambda execution-environment reuse)
 - [ ] 1.8.1.3 Replace raw `Map<String, Object>` events/responses with typed `APIGatewayProxyRequestEvent`/`APIGatewayProxyResponseEvent` (dependency already present); removes hand-rolled stage-prefix stripping and unchecked casts
 - [ ] 1.8.1.4 Centralize error responses in a shared util using Gson serialization and a consistent error schema (no hand-concatenated JSON strings)
 - [ ] 1.8.1.5 Adopt AWS Lambda Powertools for Java: structured JSON logging with correlation IDs, replacing `System.out`/`System.err`
@@ -270,7 +270,7 @@
 
 #### 1.8.2 iOS Hardening
 - [ ] 1.8.2.1 Fix Firebase Auth persistence: use `initializeAuth` with `getReactNativePersistence(AsyncStorage)` — sessions currently do not survive app restart (supports 1.4.1.5)
-- [ ] 1.8.2.2 Use cached `getIdToken()` instead of `getIdToken(true)` in the request interceptor (forced refresh adds a network round trip to every API call)
+- [x] 1.8.2.2 Use cached `getIdToken()` instead of `getIdToken(true)` in the request interceptor (forced refresh adds a network round trip to every API call)
 - [ ] 1.8.2.3 Eliminate `any` types: typed API response models in `api.ts`, typed Firebase instances, typed navigation param lists (`RootStackParamList`)
 - [ ] 1.8.2.4 Remove client-side `ensureUserRecord` Firestore writes from `authStore` — backend `GET /me` now auto-provisions; keep one source of truth
 - [ ] 1.8.2.5 Replace raw `console.log` calls with a `__DEV__`-gated logger so nothing logs in production builds (supports 1.5.3.5)

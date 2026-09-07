@@ -71,6 +71,8 @@ jobs:
             --function-name covey-weekly-spot-dev \
             --runtime java17 \
             --handler com.covey.LambdaRouter::handleRequest \
+            --memory-size 1536 \
+            --snap-start ApplyOn=PublishedVersions \
             --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-dev,SES_SENDER_EMAIL=${{ secrets.SES_SENDER_EMAIL || 'hello@coveyspot.app' }}}" \
             --region ${{ env.AWS_REGION }}
 
@@ -85,6 +87,58 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'Configuration.[FunctionName,Runtime,CodeSha256,LastModified]' \
             --output text
+
+      - name: Publish SnapStart version and route HTTP traffic through it
+        run: |
+          set -euo pipefail
+          FN=covey-weekly-spot-dev
+          REGION=${{ env.AWS_REGION }}
+          API_ID=lal06351qg
+          PROXY_RESOURCE_ID=u74xpd
+          STAGE=dev
+          ALIAS=live
+
+          # Publish a version; the SnapStart snapshot is created during this step.
+          VERSION=$(aws lambda publish-version --function-name "$FN" --region "$REGION" --query 'Version' --output text)
+          echo "Published version $VERSION"
+
+          # Wait for the version (and its SnapStart snapshot) to become Active.
+          STATE=""
+          for i in $(seq 1 60); do
+            STATE=$(aws lambda get-function-configuration --function-name "$FN" --qualifier "$VERSION" --region "$REGION" --query 'State' --output text)
+            echo "Version $VERSION state: $STATE"
+            [ "$STATE" = "Active" ] && break
+            [ "$STATE" = "Failed" ] && { echo "Version failed to become active"; exit 1; }
+            sleep 5
+          done
+          [ "$STATE" = "Active" ] || { echo "Timed out waiting for version $VERSION to become Active"; exit 1; }
+
+          # Point the 'live' alias at the new version (create on first run).
+          if aws lambda get-alias --function-name "$FN" --name "$ALIAS" --region "$REGION" >/dev/null 2>&1; then
+            aws lambda update-alias --function-name "$FN" --name "$ALIAS" --function-version "$VERSION" --region "$REGION"
+          else
+            aws lambda create-alias --function-name "$FN" --name "$ALIAS" --function-version "$VERSION" --region "$REGION"
+          fi
+
+          # Allow API Gateway to invoke the alias (idempotent; ignore if already present).
+          aws lambda add-permission --function-name "$FN" --qualifier "$ALIAS" \
+            --statement-id apigw-invoke-live \
+            --action lambda:InvokeFunction \
+            --principal apigateway.amazonaws.com \
+            --region "$REGION" 2>/dev/null || echo "invoke permission already present"
+
+          # Repoint the API Gateway proxy integration at the alias, then redeploy the stage.
+          ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          ALIAS_ARN="arn:aws:lambda:${REGION}:${ACCOUNT}:function:${FN}:${ALIAS}"
+          URI="arn:aws:apigateway:${REGION}:lambda:path/2015-03-31/functions/${ALIAS_ARN}/invocations"
+          aws apigateway update-integration \
+            --rest-api-id "$API_ID" \
+            --resource-id "$PROXY_RESOURCE_ID" \
+            --http-method ANY \
+            --patch-operations op=replace,path=/uri,value="$URI" \
+            --region "$REGION"
+          aws apigateway create-deployment --rest-api-id "$API_ID" --stage-name "$STAGE" --region "$REGION" >/dev/null
+          echo "HTTP traffic now routed through $ALIAS -> version $VERSION"
 
       - name: Get API Gateway endpoint
         id: api_gateway

@@ -20,7 +20,7 @@ export const initializeApiClient = async () => {
       try {
         const auth = getAuthInstance();
         if (auth && auth.currentUser) {
-          const token = await auth.currentUser.getIdToken(true);
+          const token = await auth.currentUser.getIdToken();
           config.headers.Authorization = `Bearer ${token}`;
         } else {
           console.warn('No auth user available for request');
