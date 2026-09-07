@@ -41,6 +41,23 @@ Secrets are automatically injected into workflow environment:
 
 Create `.env` file in `ios/` directory with the same values (never commit this file).
 
+## ⚠️ EAS Builds Read Their Own Environment Store — NOT These Secrets
+
+The GitHub secrets above are used by GitHub Actions (backend deploy, iOS test job). **They are NOT what EAS bakes into the app binary.** EAS Build injects `EXPO_PUBLIC_*` values from the **EAS-hosted environment** (`production` for the `testflight`/`production` profiles), which is a separate store.
+
+When rotating any `EXPO_PUBLIC_*` value (e.g. Firebase App ID or Google OAuth client ID), update **all three** places or builds will ship stale values:
+
+1. `ios/.env` — local dev
+2. GitHub secrets — CI test/deploy jobs
+3. **EAS environment** — what actually ships in the build:
+   ```bash
+   cd ios
+   eas env:list --environment production
+   eas env:update production --variable-name EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID --value "<new>" --non-interactive
+   ```
+
+Symptom of a missed EAS update: the app behaves as if using an old credential even though `.env` and GitHub secrets look correct (e.g. Google Sign-In `redirect_uri_mismatch` after changing the OAuth client).
+
 ## Security Notes
 
 - All `EXPO_PUBLIC_*` variables are embedded in the app binary and are not secrets
