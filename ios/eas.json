@@ -13,12 +13,14 @@
     },
     "testflight": {
       "distribution": "store",
+      "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release"
       }
     },
     "production": {
       "distribution": "store",
+      "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release"
       }
@@ -28,15 +30,13 @@
     "testflight": {
       "ios": {
         "ascAppId": "6801878266",
-        "bundleIdentifier": "com.covery.app",
-        "autoIncrement": "buildNumber"
+        "bundleIdentifier": "com.covery.app"
       }
     },
     "production": {
       "ios": {
         "ascAppId": "6801878266",
-        "bundleIdentifier": "com.covery.app",
-        "autoIncrement": "buildNumber"
+        "bundleIdentifier": "com.covery.app"
       }
     }
   }
