@@ -20,9 +20,9 @@ Add these 8 secrets:
 | `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `covey-76e19` |
 | `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | `covey-76e19.firebasestorage.app` |
 | `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `303020987694` |
-| `EXPO_PUBLIC_FIREBASE_APP_ID` | `1:303020987694:ios:6f027ecd0c2ac0a31c56bf` |
-| `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | `303020987694-na9d43c35c3dca316e3b9so1na8er982.apps.googleusercontent.com` |
-| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | `303020987694-na9d43c35c3dca316e3b9so1na8er982.apps.googleusercontent.com` |
+| `EXPO_PUBLIC_FIREBASE_APP_ID` | `1:303020987694:ios:c42f2b7b2d078d181c56bf` |
+| `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | `303020987694-macposb4igsvikt3tkef8q1168nvpu5d.apps.googleusercontent.com` |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | `303020987694-macposb4igsvikt3tkef8q1168nvpu5d.apps.googleusercontent.com` |
 
 ## Using Secrets in GitHub Actions
 
