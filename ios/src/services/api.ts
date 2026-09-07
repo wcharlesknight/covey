@@ -62,10 +62,13 @@ export const apiClient_methods = {
 
   // Feed endpoints
   getFeed: () => getApiClient().get('/me/feed'),
+  getCityFeed: (city: string) => getApiClient().get('/feed', { params: { city } }),
 
   // RSVP endpoints
   submitRsvp: (inviteId: string, status: 'yes' | 'no' | 'interested') =>
     getApiClient().post(`/invites/${inviteId}/rsvp`, { status }),
+  submitSpotRsvp: (spotId: string, status: 'yes' | 'no' | 'interested') =>
+    getApiClient().post('/rsvp', { spotId, status: status.toUpperCase() }),
 
   // Push token registration
   registerPushToken: (token: string) =>

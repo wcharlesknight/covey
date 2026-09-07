@@ -3,6 +3,18 @@ package com.covey.util;
 import java.util.Map;
 
 public class ApiGatewayUtil {
+  public static String getQueryParam(Map<String, Object> event, String name) {
+    @SuppressWarnings("unchecked")
+    Map<String, Object> params = (Map<String, Object>) event.get("queryStringParameters");
+    if (params != null) {
+      Object value = params.get(name);
+      if (value != null) {
+        return value.toString();
+      }
+    }
+    return null;
+  }
+
   public static String getAuthorizationHeader(Map<String, Object> event) {
     // Try headers map (case-insensitive lookup)
     @SuppressWarnings("unchecked")

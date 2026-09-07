@@ -13,6 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient_methods } from '../services/api';
+import { CITIES } from '../constants/cities';
 
 interface Venue {
   name: string;
@@ -76,26 +77,29 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewedCity, setViewedCity] = useState<string>(user?.city ?? CITIES[0]);
+
+  // Default the viewing city to the user's chosen (notification) city when it changes.
+  useEffect(() => {
+    if (user?.city) setViewedCity(user.city);
+  }, [user?.city]);
 
   useEffect(() => {
-    loadFeed();
-  }, []);
+    loadFeed(viewedCity);
+  }, [viewedCity]);
 
-  const loadFeed = async () => {
+  const loadFeed = async (city: string) => {
     try {
       setError(null);
-      const response = await apiClient_methods.getFeed();
-      console.log('[Feed] status:', response.status);
-      console.log('[Feed] data type:', typeof response.data, Array.isArray(response.data));
-      console.log('[Feed] raw data:', JSON.stringify(response.data).slice(0, 500));
+      const response = await apiClient_methods.getCityFeed(city);
       const items: any[] = Array.isArray(response.data) ? response.data : [];
 
       const statusMap: Record<string, 'yes' | 'no' | 'interested' | undefined> = {
-        YES: 'yes', NO: 'no', INTERESTED: 'interested', INVITED: undefined,
+        YES: 'yes', NO: 'no', INTERESTED: 'interested',
       };
 
       const toSpot = (item: any): WeeklySpot => ({
-        id: item.invite.id,
+        id: item.spot.id,
         venue: {
           name: item.spot.venueName,
           address: item.spot.venueAddress,
@@ -103,12 +107,14 @@ const HomeScreen = () => {
           lng: 0,
         },
         date: new Date(item.spot.weekStartDate).toISOString(),
-        rsvpCounts: { yes: 0, no: 0, interested: 0 },
-        userRsvp: statusMap[item.invite.status],
+        rsvpCounts: {
+          yes: item.counts?.yes ?? 0,
+          no: item.counts?.no ?? 0,
+          interested: item.counts?.interested ?? 0,
+        },
+        userRsvp: item.userRsvp ? statusMap[item.userRsvp] : undefined,
       });
 
-      console.log('[Feed] items count:', items.length);
-      if (items[0]) console.log('[Feed] first item keys:', Object.keys(items[0]));
       setFeed({
         current: items[0] ? toSpot(items[0]) : null,
         history: items.slice(1).map(toSpot),
@@ -123,10 +129,10 @@ const HomeScreen = () => {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadFeed();
-  }, []);
+    loadFeed(viewedCity);
+  }, [viewedCity]);
 
-  const handleRsvp = async (inviteId: string, newStatus: 'yes' | 'no' | 'interested') => {
+  const handleRsvp = async (spotId: string, newStatus: 'yes' | 'no' | 'interested') => {
     if (!feed?.current || rsvpSubmitting) return;
 
     const prev = feed.current;
@@ -142,7 +148,7 @@ const HomeScreen = () => {
     setRsvpSubmitting(true);
 
     try {
-      await apiClient_methods.submitRsvp(inviteId, newStatus);
+      await apiClient_methods.submitSpotRsvp(spotId, newStatus);
     } catch (err: any) {
       // Revert on failure
       setFeed(f => f ? { ...f, current: prev } : f);
@@ -164,7 +170,7 @@ const HomeScreen = () => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadFeed}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => loadFeed(viewedCity)}>
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -184,13 +190,32 @@ const HomeScreen = () => {
     >
       <View style={styles.header}>
         <Text style={styles.weeklyTitle}>This Week's Spot</Text>
+
+        <View style={styles.cityTabs}>
+          {CITIES.map((c) => (
+            <TouchableOpacity
+              key={c}
+              style={[styles.cityTab, viewedCity === c && styles.cityTabActive]}
+              onPress={() => setViewedCity(c)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.cityTabText, viewedCity === c && styles.cityTabTextActive]}>
+                {c}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <TouchableOpacity
-          style={styles.cityPill}
+          style={styles.notifyRow}
           onPress={() => navigation.navigate('ChangeCity')}
+          activeOpacity={0.7}
         >
-          <Text style={styles.cityPillText}>{user?.city ?? 'Set city'}</Text>
-          <Text style={styles.cityPillChevron}> ›</Text>
+          <Text style={styles.notifyText}>
+            Notifications: {user?.city ?? 'Set city'} ›
+          </Text>
         </TouchableOpacity>
+
         {feed?.current && (
           <Text style={styles.date}>{formatDate(feed.current.date)}</Text>
         )}
@@ -258,7 +283,7 @@ const HomeScreen = () => {
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No spot picked yet</Text>
           <Text style={styles.emptySubtitle}>
-            This week's spot for {user?.city ?? 'your city'} hasn't been selected yet.
+            This week's spot for {viewedCity} hasn't been selected yet.
             Check back Friday!
           </Text>
         </View>
@@ -326,24 +351,40 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 8,
   },
-  cityPill: {
+  cityTabs: {
     flexDirection: 'row',
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    backgroundColor: '#EDE9FE',
-    borderRadius: 20,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    padding: 4,
+    gap: 4,
     marginBottom: 8,
   },
-  cityPillText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B4CE6',
+  cityTab: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  cityPillChevron: {
-    fontSize: 16,
+  cityTabActive: {
+    backgroundColor: '#6B4CE6',
+  },
+  cityTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  cityTabTextActive: {
+    color: '#FFFFFF',
+  },
+  notifyRow: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  notifyText: {
+    fontSize: 13,
     color: '#6B4CE6',
+    fontWeight: '600',
   },
   date: {
     fontSize: 14,
