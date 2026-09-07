@@ -135,15 +135,15 @@
 - [x] 1.4.1.2 Implement Apple Sign-In flow (ASAuthorizationController, credential handling)
 - [x] 1.4.1.3 Implement Google Sign-In flow (Google Sign-In SDK for iOS)
 - [x] 1.4.1.4 Exchange identity provider credential for Firebase ID token
-- [ ] 1.4.1.5 Store Firebase ID token securely in iOS Keychain
+- [ ] 1.4.1.5 Store Firebase ID token securely in iOS Keychain (superseded by 1.8.2.1: sessions persist via Firebase `getReactNativePersistence(AsyncStorage)`, not Keychain)
 - [x] 1.4.1.6 Implement session restoration on app launch (auto sign-in if valid token in AsyncStorage)
-- [ ] 1.4.1.7 Implement sign-out flow (clear Keychain, revoke Firebase session)
+- [x] 1.4.1.7 Implement sign-out flow (clear Keychain, revoke Firebase session)
 - [ ] 1.4.1.8 Write unit tests for auth state management and Keychain operations
 
 #### 1.4.2 City Selection
-- [ ] 1.4.2.1 Build city selection screen or component (dropdown or segmented control)
-- [ ] 1.4.2.2 Persist selected city to user profile via PATCH /me
-- [ ] 1.4.2.3 Surface city preference in user settings / profile screen
+- [x] 1.4.2.1 Build city selection screen or component (dropdown or segmented control)
+- [x] 1.4.2.2 Persist selected city to user profile via PATCH /me
+- [x] 1.4.2.3 Surface city preference in user settings / profile screen
 - [ ] 1.4.2.4 Write unit tests for city selection logic and persistence
 
 #### 1.4.3 Home Feed Screen
@@ -191,7 +191,7 @@
 ### 1.5 Integration and Testing
 
 #### 1.5.1 End-to-End User Flow Testing
-- [ ] 1.5.1.1 Test: New user sign-in via Apple Sign-In, profile created, city selected
+- [x] 1.5.1.1 Test: New user sign-in via Apple Sign-In, profile created, city selected
 - [ ] 1.5.1.2 Test: New user sign-in via Google Sign-In, profile created, city selected
 - [ ] 1.5.1.3 Test: User views home feed with current weekly spot
 - [ ] 1.5.1.4 Test: User RSVPs yes, verifies count updates on refresh
@@ -269,10 +269,10 @@
 - [ ] 1.8.1.8 Enforce JaCoCo coverage threshold in CI (`jacocoTestCoverageVerification`)
 
 #### 1.8.2 iOS Hardening
-- [ ] 1.8.2.1 Fix Firebase Auth persistence: use `initializeAuth` with `getReactNativePersistence(AsyncStorage)` — sessions currently do not survive app restart (supports 1.4.1.5)
+- [x] 1.8.2.1 Fix Firebase Auth persistence: use `initializeAuth` with `getReactNativePersistence(AsyncStorage)` — sessions currently do not survive app restart (supports 1.4.1.5)
 - [x] 1.8.2.2 Use cached `getIdToken()` instead of `getIdToken(true)` in the request interceptor (forced refresh adds a network round trip to every API call)
 - [ ] 1.8.2.3 Eliminate `any` types: typed API response models in `api.ts`, typed Firebase instances, typed navigation param lists (`RootStackParamList`)
-- [ ] 1.8.2.4 Remove client-side `ensureUserRecord` Firestore writes from `authStore` — backend `GET /me` now auto-provisions; keep one source of truth
+- [x] 1.8.2.4 Remove client-side `ensureUserRecord` Firestore writes from `authStore` — backend `GET /me` now auto-provisions; keep one source of truth
 - [ ] 1.8.2.5 Replace raw `console.log` calls with a `__DEV__`-gated logger so nothing logs in production builds (supports 1.5.3.5)
 - [ ] 1.8.2.6 Enforce ESLint: remove `|| true` / `2>/dev/null` from lint scripts and `continue-on-error` from the CI lint step
 - [ ] 1.8.2.7 Remove Detox dependencies or add the missing Detox configuration (currently declared but unconfigured)
