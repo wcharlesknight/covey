@@ -20,7 +20,11 @@ public class EmailService {
   private static final String WEEKLY_SPOTS_COLLECTION = "weeklySpots";
   private static final String SENDER_EMAIL = System.getenv("SES_SENDER_EMAIL") != null
       ? System.getenv("SES_SENDER_EMAIL")
-      : "hello@coveyspot.app";
+      : "Covey <hello@coveyspot.app>";
+  // Upload ios/assets/icon.png to Firebase Storage (or S3) and set this env var
+  private static final String LOGO_URL = System.getenv("COVEY_LOGO_URL") != null
+      ? System.getenv("COVEY_LOGO_URL")
+      : "";
   private static final int MAX_RETRIES = 3;
 
   private final SesClient sesClient;
@@ -29,6 +33,10 @@ public class EmailService {
     this.sesClient = SesClient.builder()
         .region(Region.US_WEST_2)
         .build();
+  }
+
+  EmailService(SesClient sesClient) {
+    this.sesClient = sesClient;
   }
 
   public void sendWeeklyVenueEmail(String userId, String spotId, String weekId)
@@ -89,7 +97,7 @@ public class EmailService {
     }
   }
 
-  private String buildTextBody(WeeklySpot spot, String name) {
+  String buildTextBody(WeeklySpot spot, String name) {
     String deepLink = buildDeepLink(spot);
     return String.format(
         "Hi %s,\n\n" +
@@ -103,11 +111,21 @@ public class EmailService {
         spot.getRating(), spot.getReviewCount(), deepLink);
   }
 
-  private String buildHtmlBody(WeeklySpot spot, String name) {
+  String buildHtmlBody(WeeklySpot spot, String name) {
+    return buildHtmlBodyWithLogo(spot, name, LOGO_URL);
+  }
+
+  String buildHtmlBodyWithLogo(WeeklySpot spot, String name, String logoUrl) {
     String deepLink = buildDeepLink(spot);
+    String logoHtml = logoUrl != null && !logoUrl.isEmpty()
+        ? "<img src='" + logoUrl + "' alt='Covey' width='48' height='48' style='border-radius:12px;display:block;margin:0 auto 8px;'>"
+        : "";
     return String.format(
         "<!DOCTYPE html><html><body style='font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;'>" +
-        "<h2 style='color:#6B4CE6;'>This week's spot 🍻</h2>" +
+        "<div style='text-align:center;margin-bottom:24px;'>" +
+        "%s" +
+        "<span style='font-size:22px;font-weight:700;color:#6B4CE6;letter-spacing:-0.5px;'>Covey</span>" +
+        "</div>" +
         "<p>Hi %s,</p>" +
         "<p>This week's spot for <strong>%s</strong> is:</p>" +
         "<div style='background:#f9fafb;border-left:4px solid #6B4CE6;border-radius:8px;padding:16px;margin:16px 0;'>" +
@@ -120,7 +138,7 @@ public class EmailService {
         "See this week's spot →</a>" +
         "<p style='color:#9CA3AF;font-size:12px;margin-top:32px;'>— The Covey Team</p>" +
         "</body></html>",
-        name, spot.getCity(), spot.getVenueName(), spot.getVenueAddress(),
+        logoHtml, name, spot.getCity(), spot.getVenueName(), spot.getVenueAddress(),
         spot.getRating(), spot.getReviewCount(), deepLink);
   }
 
