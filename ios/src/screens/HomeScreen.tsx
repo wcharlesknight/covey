@@ -9,8 +9,8 @@ import {
   RefreshControl,
   Linking,
   Alert,
-  ActionSheetIOS,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient_methods } from '../services/api';
@@ -30,13 +30,26 @@ interface RsvpCounts {
   interested: number;
 }
 
+type SpotType = 'bar' | 'social';
+
 interface WeeklySpot {
   id: string;
   venue: Venue;
   date: string;
   rsvpCounts: RsvpCounts;
   userRsvp?: 'yes' | 'no' | 'interested';
+  type: SpotType;
 }
+
+const SPOT_TYPE_CONFIG: Record<SpotType, {
+  label: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  color: string;
+  bg: string;
+}> = {
+  bar:    { label: 'Bar',    icon: 'beer-outline',   color: '#D97706', bg: '#FEF3E2' },
+  social: { label: 'Social', icon: 'people-outline', color: '#0EA5E9', bg: '#F0F9FF' },
+};
 
 interface Feed {
   current: WeeklySpot | null;
@@ -114,6 +127,7 @@ const HomeScreen = () => {
           interested: item.counts?.interested ?? 0,
         },
         userRsvp: item.userRsvp ? statusMap[item.userRsvp] : undefined,
+        type: (item.spot.type as SpotType) ?? 'bar',
       });
 
       setFeed({
@@ -133,17 +147,15 @@ const HomeScreen = () => {
     loadFeed(viewedCity);
   }, [viewedCity]);
 
-  const showCityPicker = () => {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: 'View a city',
-        options: [...CITIES, 'Cancel'],
-        cancelButtonIndex: CITIES.length,
-      },
-      (index) => {
-        if (index < CITIES.length) setViewedCity(CITIES[index]);
-      }
-    );
+  const showBrowsePicker = () => {
+    navigation.navigate('ChangeCity', {
+      mode: 'browse',
+      onSelect: (city: string) => setViewedCity(city),
+    });
+  };
+
+  const showNotifPicker = () => {
+    navigation.navigate('ChangeCity', { mode: 'notifications' });
   };
 
   const handleRsvp = async (spotId: string, newStatus: 'yes' | 'no' | 'interested') => {
@@ -205,24 +217,17 @@ const HomeScreen = () => {
       <View style={styles.header}>
         <Text style={styles.weeklyTitle}>This Week's Spot</Text>
 
-        <TouchableOpacity
-          style={styles.cityPill}
-          onPress={showCityPicker}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.cityPillText}>{viewedCity}</Text>
-          <Text style={styles.cityPillChevron}> ⌄</Text>
-        </TouchableOpacity>
+        <View style={styles.pillRow}>
+          <TouchableOpacity style={styles.cityPill} onPress={showBrowsePicker} activeOpacity={0.7}>
+            <Ionicons name="eye-outline" size={14} color="#6B4CE6" />
+            <Text style={styles.cityPillText}>{viewedCity} ›</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.notifyRow}
-          onPress={() => navigation.navigate('ChangeCity')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.notifyText}>
-            Notifications: {user?.city ?? 'Set city'} ›
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.notifPill} onPress={showNotifPicker} activeOpacity={0.7}>
+            <Ionicons name="notifications-outline" size={14} color="#D97706" />
+            <Text style={styles.notifPillText}>{user?.city ?? 'Set city'} ›</Text>
+          </TouchableOpacity>
+        </View>
 
         {feed?.current && (
           <Text style={styles.date}>{formatDate(feed.current.date)}</Text>
@@ -231,7 +236,18 @@ const HomeScreen = () => {
 
       {feed?.current ? (
         <View style={styles.spotCard}>
-          <Text style={styles.venueName}>{feed.current.venue?.name}</Text>
+          <View style={styles.venueHeader}>
+            <Text style={styles.venueName}>{feed.current.venue?.name}</Text>
+            {(() => {
+              const cfg = SPOT_TYPE_CONFIG[feed.current.type];
+              return (
+                <View style={[styles.typeBadge, { backgroundColor: cfg.bg }]}>
+                  <Ionicons name={cfg.icon} size={13} color={cfg.color} />
+                  <Text style={[styles.typeBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+                </View>
+              );
+            })()}
+          </View>
 
           <TouchableOpacity
             style={styles.addressRow}
@@ -359,33 +375,40 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 8,
   },
+  pillRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
   cityPill: {
     flexDirection: 'row',
-    alignSelf: 'flex-start',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
     backgroundColor: '#EDE9FE',
     borderRadius: 20,
     paddingVertical: 6,
-    paddingHorizontal: 14,
-    marginBottom: 8,
+    paddingHorizontal: 12,
   },
   cityPillText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#6B4CE6',
   },
-  cityPillChevron: {
-    fontSize: 14,
-    color: '#6B4CE6',
-  },
-  notifyRow: {
+  notifPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    marginBottom: 8,
+    gap: 6,
+    backgroundColor: '#FEF3E2',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
-  notifyText: {
-    fontSize: 13,
-    color: '#6B4CE6',
+  notifPillText: {
+    fontSize: 14,
     fontWeight: '600',
+    color: '#D97706',
   },
   date: {
     fontSize: 14,
@@ -399,11 +422,30 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#6B4CE6',
   },
+  venueHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 6,
+  },
   venueName: {
+    flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1F2937',
-    marginBottom: 6,
+  },
+  typeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  typeBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   addressRow: {
     flexDirection: 'row',
