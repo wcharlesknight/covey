@@ -8,18 +8,38 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient_methods } from '../services/api';
 import { CITIES } from '../constants/cities';
 
+type RouteParams = {
+  mode?: 'browse' | 'notifications';
+  onSelect?: (city: string) => void;
+};
+
+const COPY = {
+  browse: {
+    title: 'Browse a city',
+    subtitle: "Explore this week's spot in any city. This won't change your notifications.",
+    save: 'Browse',
+  },
+  notifications: {
+    title: 'Your notification city',
+    subtitle: 'Your weekly push notification and email will be sent for this city.',
+    save: 'Save',
+  },
+};
+
 export default function CityPickerScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { mode = 'notifications', onSelect } = (route.params ?? {}) as RouteParams;
   const { user } = useAuthStore();
   const [selectedCity, setSelectedCity] = useState<string | null>(user?.city ?? null);
   const [loading, setLoading] = useState(false);
 
-  const isChanging = !!user?.city;
+  const copy = COPY[mode];
 
   const handleSelectCity = async () => {
     if (!selectedCity) {
@@ -29,15 +49,17 @@ export default function CityPickerScreen() {
 
     try {
       setLoading(true);
-      await apiClient_methods.updateUser({ city: selectedCity });
 
-      useAuthStore.setState(state => ({
-        user: state.user ? { ...state.user, city: selectedCity } : null,
-      }));
-
-      if (isChanging && navigation.canGoBack()) {
-        navigation.goBack();
+      if (mode === 'browse') {
+        onSelect?.(selectedCity);
+      } else {
+        await apiClient_methods.updateUser({ city: selectedCity });
+        useAuthStore.setState(state => ({
+          user: state.user ? { ...state.user, city: selectedCity } : null,
+        }));
       }
+
+      if (navigation.canGoBack()) navigation.goBack();
     } catch (error: any) {
       console.error('Failed to update city:', error);
       Alert.alert('Error', error.response?.data?.error || 'Failed to update city');
@@ -50,12 +72,8 @@ export default function CityPickerScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {isChanging ? 'Change Your City' : 'Select Your City'}
-          </Text>
-          <Text style={styles.subtitle}>
-            We'll show you weekly spots in your area
-          </Text>
+          <Text style={styles.title}>{copy.title}</Text>
+          <Text style={styles.subtitle}>{copy.subtitle}</Text>
         </View>
 
         <View style={styles.citiesContainer}>
@@ -84,31 +102,24 @@ export default function CityPickerScreen() {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[
-            styles.continueButton,
-            (!selectedCity || selectedCity === user?.city) && styles.continueButtonDisabled,
-          ]}
+          style={[styles.continueButton, !selectedCity && styles.continueButtonDisabled]}
           onPress={handleSelectCity}
-          disabled={!selectedCity || loading || selectedCity === user?.city}
+          disabled={!selectedCity || loading}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.continueButtonText}>
-              {isChanging ? 'Save' : 'Continue'}
-            </Text>
+            <Text style={styles.continueButtonText}>{copy.save}</Text>
           )}
         </TouchableOpacity>
 
-        {isChanging && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => navigation.goBack()}
-            disabled={loading}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => navigation.goBack()}
+          disabled={loading}
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
