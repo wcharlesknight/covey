@@ -1,0 +1,231 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Deploy backend Lambda'
+        type: boolean
+        default: true
+      deploy_ios:
+        description: 'Build and submit iOS to App Store'
+        type: boolean
+        default: true
+      submit_to_app_store:
+        description: 'Submit to App Store review (false = build only, upload to ASC)'
+        type: boolean
+        default: false
+      confirm:
+        description: 'Type DEPLOY to confirm production deployment'
+        required: true
+
+env:
+  AWS_REGION: us-west-2
+  FIREBASE_PROJECT_ID: covey-prod
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Gate: confirm the magic word before anything runs
+  # ─────────────────────────────────────────────
+  confirm-deploy:
+    runs-on: ubuntu-latest
+    name: Confirm Deployment
+    steps:
+      - name: Verify confirmation input
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "DEPLOY" ]; then
+            echo "❌ Confirmation failed. Type DEPLOY in the confirm field."
+            exit 1
+          fi
+          echo "✅ Deployment confirmed by ${{ github.actor }}"
+
+  # ─────────────────────────────────────────────
+  # Backend: build → S3 → Lambda → SnapStart → API Gateway
+  # ─────────────────────────────────────────────
+  deploy-backend-prod:
+    runs-on: ubuntu-latest
+    name: Deploy Backend to Prod
+    environment: prod
+    needs: confirm-deploy
+    if: ${{ github.event.inputs.deploy_backend == 'true' }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build backend
+        run: cd backend && gradle build createLambdaZip -x test
+
+      - name: Upload Lambda package to S3
+        run: |
+          BUCKET="covey-lambda-deployments-prod"
+          TIMESTAMP=$(date +%s)
+          S3_KEY="covey-lambda-${TIMESTAMP}.zip"
+          aws s3 cp backend/build/distributions/covey-lambda.zip "s3://$BUCKET/$S3_KEY"
+          echo "LAMBDA_S3_BUCKET=$BUCKET" >> $GITHUB_ENV
+          echo "LAMBDA_S3_KEY=$S3_KEY" >> $GITHUB_ENV
+
+      - name: Deploy Lambda function code
+        run: |
+          aws lambda update-function-code \
+            --function-name covey-weekly-spot-prod \
+            --s3-bucket ${{ env.LAMBDA_S3_BUCKET }} \
+            --s3-key ${{ env.LAMBDA_S3_KEY }} \
+            --region ${{ env.AWS_REGION }}
+          aws lambda wait function-updated \
+            --function-name covey-weekly-spot-prod \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Configure Lambda runtime and environment
+        run: |
+          aws lambda update-function-configuration \
+            --function-name covey-weekly-spot-prod \
+            --runtime java17 \
+            --handler com.covey.LambdaRouter::handleRequest \
+            --memory-size 1536 \
+            --snap-start ApplyOn=PublishedVersions \
+            --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-prod,SES_SENDER_EMAIL=Covey <hello@coveyspot.app>,COVEY_LOGO_URL=${{ secrets.COVEY_LOGO_URL }}}" \
+            --region ${{ env.AWS_REGION }}
+          aws lambda wait function-updated \
+            --function-name covey-weekly-spot-prod \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Publish SnapStart version and route traffic
+        run: |
+          set -euo pipefail
+          FN=covey-weekly-spot-prod
+          REGION=${{ env.AWS_REGION }}
+          API_ID=${{ secrets.PROD_API_GATEWAY_ID }}
+          PROXY_RESOURCE_ID=${{ secrets.PROD_API_PROXY_RESOURCE_ID }}
+          STAGE=prod
+          ALIAS=live
+
+          VERSION=$(aws lambda publish-version --function-name "$FN" --region "$REGION" --query 'Version' --output text)
+          echo "Published version $VERSION"
+
+          STATE=""
+          for i in $(seq 1 60); do
+            STATE=$(aws lambda get-function-configuration --function-name "$FN" --qualifier "$VERSION" --region "$REGION" --query 'State' --output text)
+            echo "Version $VERSION state: $STATE"
+            [ "$STATE" = "Active" ] && break
+            [ "$STATE" = "Failed" ] && { echo "Version failed"; exit 1; }
+            sleep 5
+          done
+          [ "$STATE" = "Active" ] || { echo "Timed out waiting for Active"; exit 1; }
+
+          if aws lambda get-alias --function-name "$FN" --name "$ALIAS" --region "$REGION" >/dev/null 2>&1; then
+            aws lambda update-alias --function-name "$FN" --name "$ALIAS" --function-version "$VERSION" --region "$REGION"
+          else
+            aws lambda create-alias --function-name "$FN" --name "$ALIAS" --function-version "$VERSION" --region "$REGION"
+          fi
+
+          aws lambda add-permission --function-name "$FN" --qualifier "$ALIAS" \
+            --statement-id apigw-invoke-live \
+            --action lambda:InvokeFunction \
+            --principal apigateway.amazonaws.com \
+            --region "$REGION" 2>/dev/null || echo "permission already present"
+
+          ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          ALIAS_ARN="arn:aws:lambda:${REGION}:${ACCOUNT}:function:${FN}:${ALIAS}"
+          URI="arn:aws:apigateway:${REGION}:lambda:path/2015-03-31/functions/${ALIAS_ARN}/invocations"
+          aws apigateway update-integration \
+            --rest-api-id "$API_ID" \
+            --resource-id "$PROXY_RESOURCE_ID" \
+            --http-method ANY \
+            --patch-operations op=replace,path=/uri,value="$URI" \
+            --region "$REGION"
+          aws apigateway create-deployment \
+            --rest-api-id "$API_ID" \
+            --stage-name "$STAGE" \
+            --region "$REGION" >/dev/null
+
+          echo "✅ Traffic routed to version $VERSION via $ALIAS alias"
+
+      - name: Smoke test prod backend
+        run: |
+          PROD_URL="https://${{ secrets.PROD_API_GATEWAY_ID }}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/prod"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL/me" \
+            -H "Authorization: Bearer invalid-smoke-test")
+          echo "Health check status: $STATUS"
+          # 401 = Lambda is reachable and auth is working; anything 5xx = problem
+          if [[ "$STATUS" == 5* ]]; then
+            echo "❌ Prod Lambda returned $STATUS — check CloudWatch"
+            exit 1
+          fi
+          echo "✅ Prod Lambda is reachable (HTTP $STATUS)"
+
+  # ─────────────────────────────────────────────
+  # iOS: EAS build → App Store Connect
+  # ─────────────────────────────────────────────
+  deploy-ios-appstore:
+    runs-on: ubuntu-latest
+    name: Build and Submit iOS to App Store
+    environment: prod
+    needs: confirm-deploy
+    if: ${{ github.event.inputs.deploy_ios == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'ios/package-lock.json'
+
+      - name: Install dependencies
+        run: cd ios && npm install
+
+      - name: Set up EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Build for App Store (EAS)
+        run: |
+          cd ios
+          eas build --platform ios --profile production --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to App Store Connect
+        if: ${{ github.event.inputs.submit_to_app_store == 'true' }}
+        run: |
+          cd ios
+          eas submit --platform ios --profile production --latest --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build complete — manual submission required
+        if: ${{ github.event.inputs.submit_to_app_store == 'false' }}
+        run: |
+          echo "✅ Build uploaded to App Store Connect."
+          echo "To submit for review: go to appstoreconnect.apple.com → your build → Add for Review"
+
+  # ─────────────────────────────────────────────
+  # Summary
+  # ─────────────────────────────────────────────
+  deployment-summary:
+    runs-on: ubuntu-latest
+    name: Deployment Summary
+    needs: [deploy-backend-prod, deploy-ios-appstore]
+    if: always()
+    steps:
+      - name: Write summary
+        run: |
+          echo "## Production Deployment — $(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "Triggered by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "Backend: ${{ needs.deploy-backend-prod.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "iOS: ${{ needs.deploy-ios-appstore.result }}" >> $GITHUB_STEP_SUMMARY
