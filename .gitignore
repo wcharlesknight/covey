@@ -2,6 +2,7 @@
 backend/target/
 backend/.gradle/
 backend/build/
+backend/bin/
 backend/.idea/
 backend/*.iml
 backend/.DS_Store
