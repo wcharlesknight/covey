@@ -102,7 +102,7 @@ jobs:
           ENV_JSON=$(jq -nc \
             --arg places "$GOOGLE_PLACES_API_KEY" \
             --arg logo "$COVEY_LOGO_URL" \
-            '{Variables: {GOOGLE_PLACES_API_KEY: $places, FIREBASE_CREDENTIALS_SECRET: "covey/firebase-admin-prod", SES_SENDER_EMAIL: "Covey <hello@coveyspot.app>"} + (if $logo != "" then {COVEY_LOGO_URL: $logo} else {} end)}')
+            '{Variables: ({GOOGLE_PLACES_API_KEY: $places, FIREBASE_CREDENTIALS_SECRET: "covey/firebase-admin-prod", SES_SENDER_EMAIL: "Covey <hello@coveyspot.app>"} + (if $logo != "" then {COVEY_LOGO_URL: $logo} else {} end))}')
           aws lambda update-function-configuration \
             --function-name covey-weekly-spot-prod \
             --runtime java17 \
