@@ -25,7 +25,7 @@ jobs:
   deploy-infrastructure:
     runs-on: ubuntu-latest
     name: Deploy Infrastructure
-    environment: nonprod
+    environment: ${{ github.event.inputs.environment == 'prod' && 'prod' || 'nonprod' }}
     permissions:
       id-token: write
       contents: read

@@ -36,7 +36,7 @@ without a live privacy policy URL; AWS infra must exist before the pipeline can 
 - [ ] Create Lambda function `covey-weekly-spot-prod` (Java 17, 1536 MB, SnapStart on)
 - [ ] Create S3 bucket `covey-lambda-deployments-prod` (us-west-2, block public access)
 - [ ] Create prod API Gateway (REST API) — note the API ID and proxy resource ID
-- [ ] Add `covey/firebase-admin-prod` secret to AWS Secrets Manager
+- [ ] Add `covey/firebase-admin-prod` secret to AWS Secrets Manager (service-account JSON for `covey-76e19`)
 - [ ] Confirm `GitHubActionsRole` IAM policy covers prod Lambda + S3 ARNs
 - [ ] Deploy EventBridge prod rules:
   ```bash
@@ -56,8 +56,9 @@ without a live privacy policy URL; AWS infra must exist before the pipeline can 
 ## Phase 4 — GitHub Setup
 
 - [ ] Add GitHub secret `PROD_API_GATEWAY_ID`
-- [ ] Add GitHub secret `PROD_API_PROXY_RESOURCE_ID`
-- [ ] Create GitHub environment `prod` with required reviewer approval gate
+- [x] Add GitHub secret `PROD_API_PROXY_RESOURCE_ID` (done 2026-10-16)
+- [x] Create GitHub environment `prod` (done 2026-10-16)
+- [ ] Add required reviewer to the `prod` environment
   (Settings → Environments → New environment → add yourself as reviewer)
 
 ---
@@ -65,8 +66,7 @@ without a live privacy policy URL; AWS infra must exist before the pipeline can 
 ## Phase 5 — Firebase
 
 - [ ] Enable Firebase Crashlytics on the iOS app (WBS 1.2.1.6)
-- [ ] Decide: share `covey-76e19` for prod or create `covey-prod` project
-  - Sharing is fine for v1.0 — create prod project before scaling
+- [x] Decided: prod shares `covey-76e19` (`FIREBASE_PROJECT_ID` updated in deploy-prod.yml); create a separate prod project before scaling
 - [ ] Upload `ios/assets/icon.png` to Firebase Storage → set `COVEY_LOGO_URL` env var on Lambda
   (makes the weekly email show the Covey icon instead of just text)
 

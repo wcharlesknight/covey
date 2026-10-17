@@ -21,7 +21,7 @@ on:
 
 env:
   AWS_REGION: us-west-2
-  FIREBASE_PROJECT_ID: covey-prod
+  FIREBASE_PROJECT_ID: covey-76e19
 
 jobs:
   # ─────────────────────────────────────────────
