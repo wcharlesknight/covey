@@ -91,14 +91,25 @@ jobs:
             --region ${{ env.AWS_REGION }}
 
       - name: Configure Lambda runtime and environment
+        env:
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          COVEY_LOGO_URL: ${{ secrets.COVEY_LOGO_URL }}
         run: |
+          if [ -z "$GOOGLE_PLACES_API_KEY" ]; then
+            echo "::error::GOOGLE_PLACES_API_KEY secret is not set"
+            exit 1
+          fi
+          ENV_JSON=$(jq -nc \
+            --arg places "$GOOGLE_PLACES_API_KEY" \
+            --arg logo "$COVEY_LOGO_URL" \
+            '{Variables: {GOOGLE_PLACES_API_KEY: $places, FIREBASE_CREDENTIALS_SECRET: "covey/firebase-admin-prod", SES_SENDER_EMAIL: "Covey <hello@coveyspot.app>"} + (if $logo != "" then {COVEY_LOGO_URL: $logo} else {} end)}')
           aws lambda update-function-configuration \
             --function-name covey-weekly-spot-prod \
             --runtime java17 \
             --handler com.covey.LambdaRouter::handleRequest \
             --memory-size 1536 \
             --snap-start ApplyOn=PublishedVersions \
-            --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-prod,SES_SENDER_EMAIL=Covey <hello@coveyspot.app>,COVEY_LOGO_URL=${{ secrets.COVEY_LOGO_URL }}}" \
+            --environment "$ENV_JSON" \
             --region ${{ env.AWS_REGION }}
           aws lambda wait function-updated \
             --function-name covey-weekly-spot-prod \
