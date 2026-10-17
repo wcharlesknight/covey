@@ -73,7 +73,7 @@ jobs:
             --handler com.covey.LambdaRouter::handleRequest \
             --memory-size 1536 \
             --snap-start ApplyOn=PublishedVersions \
-            --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-dev,SES_SENDER_EMAIL=${{ secrets.SES_SENDER_EMAIL || 'hello@coveyspot.app' }}}" \
+            --environment "Variables={GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }},FIREBASE_CREDENTIALS_SECRET=covey/firebase-admin-dev,SES_SENDER_EMAIL=Covey <hello@coveyspot.app>}" \
             --region ${{ env.AWS_REGION }}
 
           aws lambda wait function-updated \

@@ -18,9 +18,10 @@ import software.amazon.awssdk.services.ses.model.SesException;
 public class EmailService {
   private static final String USERS_COLLECTION = "users";
   private static final String WEEKLY_SPOTS_COLLECTION = "weeklySpots";
-  private static final String SENDER_EMAIL = System.getenv("SES_SENDER_EMAIL") != null
-      ? System.getenv("SES_SENDER_EMAIL")
-      : "Covey <hello@coveyspot.app>";
+  private static final String SENDER_EMAIL = withDisplayName(
+      System.getenv("SES_SENDER_EMAIL") != null
+          ? System.getenv("SES_SENDER_EMAIL")
+          : "hello@coveyspot.app");
   // Upload ios/assets/icon.png to Firebase Storage (or S3) and set this env var
   private static final String LOGO_URL = System.getenv("COVEY_LOGO_URL") != null
       ? System.getenv("COVEY_LOGO_URL")
@@ -28,6 +29,10 @@ public class EmailService {
   private static final int MAX_RETRIES = 3;
 
   private final SesClient sesClient;
+
+  static String withDisplayName(String sender) {
+    return sender.contains("<") ? sender : "Covey <" + sender.trim() + ">";
+  }
 
   public EmailService() {
     this.sesClient = SesClient.builder()
